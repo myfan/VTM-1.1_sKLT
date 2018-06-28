@@ -320,17 +320,17 @@ void CacheBlkInfoCtrl::create()
 
   for( unsigned x = 0; x < numPos; x++ )
   {
-    for( unsigned y = 0; y < numPos; y++ )
+    for( unsigned y = 0; y < numPos; y++ ) //! loop over each MIN_CU_LOG2 x MIN_CU_LOG2 unit
     {
       m_codedCUInfo[x][y] = new CodedCUInfo**[m_numWidths];
 
-      for( int wIdx = 0; wIdx < gp_sizeIdxInfo->numWidths(); wIdx++ )
+      for( int wIdx = 0; wIdx < gp_sizeIdxInfo->numWidths(); wIdx++ ) //! loop over each CU width equal to 1<<N, and check whether the CU width is allowed
       {
         if( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( wIdx ) ) && x + ( gp_sizeIdxInfo->sizeFrom( wIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) )
         {
           m_codedCUInfo[x][y][wIdx] = new CodedCUInfo*[gp_sizeIdxInfo->numHeights()];
 
-          for( int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++ )
+          for( int hIdx = 0; hIdx < gp_sizeIdxInfo->numHeights(); hIdx++ ) //! loop over each allowed CU height
           {
             if( gp_sizeIdxInfo->isCuSize( gp_sizeIdxInfo->sizeFrom( hIdx ) ) && y + ( gp_sizeIdxInfo->sizeFrom( hIdx ) >> MIN_CU_LOG2 ) <= ( MAX_CU_SIZE >> MIN_CU_LOG2 ) )
             {

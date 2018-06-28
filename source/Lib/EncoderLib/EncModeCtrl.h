@@ -442,8 +442,8 @@ class EncModeCtrlMTnoRQT : public EncModeCtrl, public SaveLoadEncInfoCtrl, publi
     BEST_VERT_SPLIT_COST,
     BEST_TRIH_SPLIT_COST,
     BEST_TRIV_SPLIT_COST,
-    DO_TRIH_SPLIT,
-    DO_TRIV_SPLIT,
+    DO_TRIH_SPLIT,        //! whether triple horizontal split is allowed
+    DO_TRIV_SPLIT,        //! whether triple horizontal split is allowed
     BEST_NON_SPLIT_COST,
     HISTORY_NEED_TO_SAVE,
     HISTORY_DO_SAVE,
