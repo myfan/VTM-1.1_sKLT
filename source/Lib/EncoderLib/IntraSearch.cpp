@@ -50,6 +50,11 @@
 #include <math.h>
 #include <limits>
 
+#if INTRA_RESI_OUTPUT
+#include <fstream>
+using namespace std;
+#endif
+
  //! \ingroup EncoderLib
  //! \{
 
@@ -1240,6 +1245,25 @@ Void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
   //===== get residual signal =====
   piResi.copyFrom( piOrg  );
   piResi.subtract( piPred );
+
+#if INTRA_RESI_OUTPUT
+  extern std::string statLogFileName;
+  if (compID == COMPONENT_Y && tu.lwidth() == 16 && tu.lheight() == 16)
+  {
+    const UInt uiDirMode = PU::getFinalIntraMode(pu, toChannelType(compID));
+    static ofstream fout(statLogFileName);
+
+    fout << uiDirMode << " ";
+    for (int y = 0, pos = 0; y < piResi.height; y++, pos += piResi.stride)
+    {
+      for (int x = 0; x < piResi.width; x++)
+      {
+        fout << piResi.buf[pos + x] << " ";
+      }
+    }
+    fout << endl;
+  }
+#endif
 
   if (pps.getPpsRangeExtension().getCrossComponentPredictionEnabledFlag() && isLuma(compID))
   {
