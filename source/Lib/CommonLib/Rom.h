@@ -139,6 +139,10 @@ extern TMatrixCoeff g_aiTr32  [NUM_TRANS_TYPE][ 32][ 32];
 extern TMatrixCoeff g_aiTr64  [NUM_TRANS_TYPE][ 64][ 64];
 extern TMatrixCoeff g_aiTr128 [NUM_TRANS_TYPE][128][128];
 
+#if INTRA_KLT_MATRIX
+extern const TMatrixCoeff g_aiKLT256 [256][256];
+#endif
+
 // ====================================================================================================================
 // Decision tree templates
 // ====================================================================================================================

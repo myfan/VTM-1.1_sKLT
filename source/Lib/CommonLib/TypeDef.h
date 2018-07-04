@@ -86,7 +86,11 @@
 // NEXT software switches
 // ====================================================================================================================
 
-#define INTRA_RESI_OUTPUT                         1
+#define INTRA_RESI_OUTPUT                                 0
+#define INTRA_KLT_MATRIX                                  1
+#if INTRA_KLT_MATRIX
+#define KLT_DEBUG                                         0
+#endif
 
 #ifndef ENABLE_TRACING
 #define ENABLE_TRACING                                    0 // DISABLE by default (enable only when debugging, requires 15% run-time in decoding) -- see documentation in 'doc/DTrace for NextSoftware.pdf'

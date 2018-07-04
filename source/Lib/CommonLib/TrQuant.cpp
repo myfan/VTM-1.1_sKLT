@@ -110,6 +110,87 @@ void TrQuant::copyState( const TrQuant& other )
 }
 #endif
 
+#if INTRA_KLT_MATRIX
+
+/** NxN forward KL-transform (1D) using brute force matrix multiplication
+*  \param block pointer to input data (residual)
+*  \param coeff pointer to output data (transform coefficients)
+*  \param uiTrSize transform size (uiTrSize x uiTrSize)
+*/
+void xKLTr(Int bitDepth, const Pel *block, TCoeff *coeff, UInt uiTrSize)  //void xKLTr(Int bitDepth, Pel *block, Short *coeff, UInt uiTrSize)  
+{
+  Int i, k, iSum;
+  Int uiDim = uiTrSize * uiTrSize;
+  UInt uiLog2TrSize = g_aucLog2[uiTrSize];
+  Int shift = bitDepth + uiLog2TrSize + KLTBASIS_SHIFTBIT - 15; //! to match the shift in quantization
+  Int add = 1 << (shift - 1);
+  UInt uiTarDepth = g_aucLog2[uiTrSize];
+  //Short **pTMat = g_ppsEigenVector[uiTarDepth];
+  const Short *pTMat = g_aiKLT256[0];
+#if KLT_DEBUG
+  printf("residual block:\n");
+#endif
+  for (i = 0; i< uiDim; i++)
+  {
+    iSum = 0;
+    const Short *pT = g_aiKLT256[i]; //g_psEigenVectorDim16[i];
+    for (k = 0; k<uiDim; k++)
+    {
+      iSum += pT[k] * block[k];
+#if KLT_DEBUG
+      if(i == 0)
+        printf("%4d, ", block[k]);
+#endif
+    }
+    coeff[i] = (iSum + add) >> shift;
+#if KLT_DEBUG
+    if(i == 0)
+      printf("\n\nKLT coeff:\n");
+    printf("%4d, ", coeff[i]);
+#endif
+  }
+}
+
+/** NxN inverse KL-transform (1D) using brute force matrix multiplication
+*  \param coeff pointer to input data (transform coefficients)
+*  \param block pointer to output data (residual)
+*  \param uiTrSize transform size (uiTrSize x uiTrSize)
+*/
+void xIKLTr(Int bitDepth, const TCoeff *coeff, Pel *block, UInt uiTrSize)  //void xIKLTr(Short *coeff, Pel *block, UInt uiTrSize) 
+{
+  Int i, k, iSum;
+  UInt uiDim = uiTrSize * uiTrSize;
+  //Int shift = 7 + KLTBASIS_SHIFTBIT - (g_bitDepthY - 8);
+  //ComponentID component = COMPONENT_Y;
+  //const Int channelBitDepth = rTu.getCU()->getSlice()->getSPS()->getBitDepth(toChannelType(component));
+  Int shift = 15 + KLTBASIS_SHIFTBIT - bitDepth - g_aucLog2[uiTrSize];
+  Int add = 1 << (shift - 1);
+  UInt uiTarDepth = g_aucLog2[uiTrSize];
+  //Short **pTMat = g_ppsEigenVector[uiTarDepth];
+  const Short (*pTMat)[256] = g_aiKLT256;
+#if KLT_DEBUG
+  printf("\n\nKLT coeff:\n");
+#endif
+  for (i = 0; i < uiDim; i++)
+  {
+    iSum = 0;
+    for (k = 0; k < uiDim; k++)
+    {
+      iSum += pTMat[k][i] * coeff[k];
+#if KLT_DEBUG
+      if (i == 0)
+        printf("%4d, ", coeff[k]);
+#endif
+    }
+    block[i] = (iSum + add) >> shift;
+#if KLT_DEBUG
+    if (i == 0)
+      printf("\n\nreconstructed residual block:\n");
+    printf("%4d, ", block[i]);
+#endif
+  }
+}
+#endif
 
 /** MxN forward transform (2D)
 *  \param bitDepth              [in]  bit depth
@@ -480,6 +561,15 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
 #if HEVC_USE_4x4_DSTVII
   const bool     useDST          = TU::useDST( tu, compID );
 #endif
+#if INTRA_KLT_MATRIX
+
+  //if( ucTrIdx != DCT2_HEVC )
+  if( iWidth == 16 && iHeight == 16 )
+  {
+    xKLTr ( channelBitDepth, resi.buf, dstCoeff.buf, iWidth);
+  }
+  else
+#endif
   {
 #if HEVC_USE_4x4_DSTVII
     m_fTr     ( channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, useDST, maxLog2TrDynamicRange );
@@ -499,6 +589,20 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   const bool     useDST          = TU::useDST( tu, compID );
 #endif
 
+#if INTRA_KLT_MATRIX
+  //const unsigned ucMode = getEmtMode(tu, compID);
+  //const unsigned ucTrIdx = getEmtTrIdx(tu, compID);
+
+  const unsigned ucMode = 0;
+  const unsigned ucTrIdx = 0;
+  //if (ucTrIdx != DCT2_HEVC)
+  if (pCoeff.width == 16 && pCoeff.height == 16)
+  {
+    assert(pCoeff.width == pResidual.stride);
+    xIKLTr      ( channelBitDepth, pCoeff.buf, pResidual.buf, pCoeff.width );
+  }
+  else
+#endif
   {
 #if HEVC_USE_4x4_DSTVII
     m_fITr     ( channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height,                          useDST, maxLog2TrDynamicRange );
