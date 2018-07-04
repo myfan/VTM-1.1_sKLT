@@ -117,14 +117,25 @@ void TrQuant::copyState( const TrQuant& other )
 *  \param coeff pointer to output data (transform coefficients)
 *  \param uiTrSize transform size (uiTrSize x uiTrSize)
 */
-void xKLTr(Int bitDepth, const Pel *block, TCoeff *coeff, UInt uiTrSize)  //void xKLTr(Int bitDepth, Pel *block, Short *coeff, UInt uiTrSize)  
+void xKLTr(Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, size_t width, size_t height)  //void xKLTr(Int bitDepth, Pel *block, Short *coeff, UInt uiTrSize)  
 {
   Int i, k, iSum;
-  Int uiDim = uiTrSize * uiTrSize;
-  UInt uiLog2TrSize = g_aucLog2[uiTrSize];
+  const int iWidth = (int)width;
+  const int iHeight = (int)height;
+  UInt uiDim = iWidth * iHeight;
+  UInt uiLog2TrSize = (g_aucLog2[iWidth] + g_aucLog2[iHeight]) >> 1;
   Int shift = bitDepth + uiLog2TrSize + KLTBASIS_SHIFTBIT - 15; //! to match the shift in quantization
   Int add = 1 << (shift - 1);
-  UInt uiTarDepth = g_aucLog2[uiTrSize];
+  //UInt uiTarDepth = g_aucLog2[uiTrSize];
+  ALIGN_DATA(MEMORY_ALIGN_DEF_SIZE, TCoeff block[MAX_TU_SIZE * MAX_TU_SIZE]);
+  for (Int y = 0; y < iHeight; y++)
+  {
+    for (Int x = 0; x < iWidth; x++)
+    {
+      block[(y * iWidth) + x] = residual[(y * stride) + x];
+    }
+  }
+
   //Short **pTMat = g_ppsEigenVector[uiTarDepth];
   const Short *pTMat = g_aiKLT256[0];
 #if KLT_DEBUG
@@ -156,16 +167,20 @@ void xKLTr(Int bitDepth, const Pel *block, TCoeff *coeff, UInt uiTrSize)  //void
 *  \param block pointer to output data (residual)
 *  \param uiTrSize transform size (uiTrSize x uiTrSize)
 */
-void xIKLTr(Int bitDepth, const TCoeff *coeff, Pel *block, UInt uiTrSize)  //void xIKLTr(Short *coeff, Pel *block, UInt uiTrSize) 
+void xIKLTr(Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, size_t width, size_t height)  //void xIKLTr(Short *coeff, Pel *block, UInt uiTrSize) 
 {
   Int i, k, iSum;
-  UInt uiDim = uiTrSize * uiTrSize;
+  const int iWidth = (int)width;
+  const int iHeight = (int)height;
+  UInt uiDim = iWidth * iHeight;
   //Int shift = 7 + KLTBASIS_SHIFTBIT - (g_bitDepthY - 8);
   //ComponentID component = COMPONENT_Y;
   //const Int channelBitDepth = rTu.getCU()->getSlice()->getSPS()->getBitDepth(toChannelType(component));
-  Int shift = 15 + KLTBASIS_SHIFTBIT - bitDepth - g_aucLog2[uiTrSize];
+  Int shift = 15 + KLTBASIS_SHIFTBIT - bitDepth - ((g_aucLog2[iWidth] + g_aucLog2[iHeight]) >> 1);
   Int add = 1 << (shift - 1);
-  UInt uiTarDepth = g_aucLog2[uiTrSize];
+  //UInt uiTarDepth = g_aucLog2[uiTrSize];
+  ALIGN_DATA(MEMORY_ALIGN_DEF_SIZE, TCoeff   tmp[MAX_TU_SIZE * MAX_TU_SIZE]);
+
   //Short **pTMat = g_ppsEigenVector[uiTarDepth];
   const Short (*pTMat)[256] = g_aiKLT256;
 #if KLT_DEBUG
@@ -182,12 +197,19 @@ void xIKLTr(Int bitDepth, const TCoeff *coeff, Pel *block, UInt uiTrSize)  //voi
         printf("%4d, ", coeff[k]);
 #endif
     }
-    block[i] = (iSum + add) >> shift;
+    tmp[i] = (iSum + add) >> shift;
 #if KLT_DEBUG
     if (i == 0)
       printf("\n\nreconstructed residual block:\n");
-    printf("%4d, ", block[i]);
+    printf("%4d, ", tmp[i]);
 #endif
+  }
+  for (Int y = 0; y < iHeight; y++)
+  {
+    for (Int x = 0; x < iWidth; x++)
+    {
+      residual[(y * stride) + x] = Pel(tmp[(y * iWidth) + x]);
+    }
   }
 }
 #endif
@@ -566,7 +588,7 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   //if( ucTrIdx != DCT2_HEVC )
   if( iWidth == 16 && iHeight == 16 )
   {
-    xKLTr ( channelBitDepth, resi.buf, dstCoeff.buf, iWidth);
+    xKLTr ( channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight);
   }
   else
 #endif
@@ -598,8 +620,7 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   //if (ucTrIdx != DCT2_HEVC)
   if (pCoeff.width == 16 && pCoeff.height == 16)
   {
-    assert(pCoeff.width == pResidual.stride);
-    xIKLTr      ( channelBitDepth, pCoeff.buf, pResidual.buf, pCoeff.width );
+    xIKLTr      ( channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height);
   }
   else
 #endif
