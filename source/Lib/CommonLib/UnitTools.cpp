@@ -1479,7 +1479,11 @@ UInt TU::getCoefScanIdx(const TransformUnit &tu, const ComponentID &compID)
   //------------------------------------------------
 
   //this mechanism is available for intra only
-
+#if INTRA_KLT_MATRIX
+  if (tu.block(compID).width == 16 && tu.block(compID).height == 16)
+    return SCAN_HOR;
+  return SCAN_DIAG;
+#endif
   if( !CU::isIntra( *tu.cu ) )
   {
     return SCAN_DIAG;

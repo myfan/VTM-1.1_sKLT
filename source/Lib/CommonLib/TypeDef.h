@@ -108,7 +108,6 @@
 #define HEVC_USE_DC_PREDFILTERING                         1
 #define HEVC_USE_HOR_VER_PREDFILTERING                    1
 #define HEVC_USE_4x4_DSTVII                               1
-#define HEVC_USE_MDCS                                     1
 #define HEVC_USE_SIGN_HIDING                              1
 #define HEVC_USE_SCALING_LISTS                            1
 #define HEVC_USE_PART_SIZE                              ( 1                       && HEVC_USE_RQT )
@@ -119,6 +118,7 @@
 #define HEVC_TILES_WPP                                    1
 #endif
 
+#define HEVC_USE_MDCS                                     1
 
 #define KEEP_PRED_AND_RESI_SIGNALS                        0
 

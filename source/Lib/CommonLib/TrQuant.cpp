@@ -128,6 +128,7 @@ void xKLTr(Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, size
   Int add = 1 << (shift - 1);
   //UInt uiTarDepth = g_aucLog2[uiTrSize];
   ALIGN_DATA(MEMORY_ALIGN_DEF_SIZE, TCoeff block[MAX_TU_SIZE * MAX_TU_SIZE]);
+  //ALIGN_DATA(MEMORY_ALIGN_DEF_SIZE, TCoeff tmpCoeff[MAX_TU_SIZE * MAX_TU_SIZE]);
   for (Int y = 0; y < iHeight; y++)
   {
     for (Int x = 0; x < iWidth; x++)
