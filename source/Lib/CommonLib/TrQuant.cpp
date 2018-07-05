@@ -137,6 +137,7 @@ void xKLTr(Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, size
   }
 
   //Short **pTMat = g_ppsEigenVector[uiTarDepth];
+  UInt *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][g_aucLog2[iWidth]][g_aucLog2[iHeight]];
   const Short *pTMat = g_aiKLT256[0];
 #if KLT_DEBUG
   printf("residual block:\n");
@@ -153,13 +154,15 @@ void xKLTr(Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, size
         printf("%4d, ", block[k]);
 #endif
     }
-    coeff[i] = (iSum + add) >> shift;
-#if KLT_DEBUG
-    if(i == 0)
-      printf("\n\nKLT coeff:\n");
-    printf("%4d, ", coeff[i]);
-#endif
+    coeff[scan[i]] = (iSum + add) >> shift;
   }
+#if KLT_DEBUG
+  printf("\n\nKLT coeff before quantization:\n");
+  for (i = 0; i < uiDim; i++)
+  {
+    printf("%4d, ", coeff[i]);
+  }
+#endif
 }
 
 /** NxN inverse KL-transform (1D) using brute force matrix multiplication
@@ -182,16 +185,17 @@ void xIKLTr(Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, siz
   ALIGN_DATA(MEMORY_ALIGN_DEF_SIZE, TCoeff   tmp[MAX_TU_SIZE * MAX_TU_SIZE]);
 
   //Short **pTMat = g_ppsEigenVector[uiTarDepth];
+  UInt *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][g_aucLog2[iWidth]][g_aucLog2[iHeight]];
   const Short (*pTMat)[256] = g_aiKLT256;
 #if KLT_DEBUG
-  printf("\n\nKLT coeff:\n");
+  printf("\n\nKLT coeff after inverse quantization:\n");
 #endif
   for (i = 0; i < uiDim; i++)
   {
     iSum = 0;
     for (k = 0; k < uiDim; k++)
     {
-      iSum += pTMat[k][i] * coeff[k];
+      iSum += pTMat[k][i] * coeff[scan[k]];
 #if KLT_DEBUG
       if (i == 0)
         printf("%4d, ", coeff[k]);

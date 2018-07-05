@@ -619,8 +619,8 @@ enum CoeffScanType
 
 enum CoeffScanGroupType
 {
-  SCAN_UNGROUPED   = 0,
-  SCAN_GROUPED_4x4 = 1,
+  SCAN_UNGROUPED   = 0, //! scan order for whole block
+  SCAN_GROUPED_4x4 = 1, //! scan order for 4x4 sub-blocks
   SCAN_NUMBER_OF_GROUP_TYPES = 2
 };
 
