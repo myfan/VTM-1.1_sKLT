@@ -1248,7 +1248,7 @@ Void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
 
 #if INTRA_RESI_OUTPUT
   extern std::string statLogFileName;
-  if (compID == COMPONENT_Y && tu.lwidth() == 16 && tu.lheight() == 16)
+  if (compID == COMPONENT_Y && tu.lwidth() == 8 && tu.lheight() == 8)
   {
     const UInt uiDirMode = PU::getFinalIntraMode(pu, toChannelType(compID));
     static ofstream fout(statLogFileName);

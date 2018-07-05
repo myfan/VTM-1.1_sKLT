@@ -122,7 +122,7 @@ void xKLTr(Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, size
   Int i, k, iSum;
   const int iWidth = (int)width;
   const int iHeight = (int)height;
-  UInt uiDim = iWidth * iHeight;
+  const UInt uiDim = iWidth * iHeight;
   UInt uiLog2TrSize = (g_aucLog2[iWidth] + g_aucLog2[iHeight]) >> 1;
   Int shift = bitDepth + uiLog2TrSize + KLTBASIS_SHIFTBIT - 15; //! to match the shift in quantization
   Int add = 1 << (shift - 1);
@@ -138,14 +138,14 @@ void xKLTr(Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, size
 
   //Short **pTMat = g_ppsEigenVector[uiTarDepth];
   UInt *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][g_aucLog2[iWidth]][g_aucLog2[iHeight]];
-  const Short *pTMat = g_aiKLT256[0];
+  const TMatrixCoeff *pTMat = (uiDim == 256) ? g_aiKLT256[0] : g_aiKLT64[0];
 #if KLT_DEBUG
   printf("residual block:\n");
 #endif
   for (i = 0; i< uiDim; i++)
   {
     iSum = 0;
-    const Short *pT = g_aiKLT256[i]; //g_psEigenVectorDim16[i];
+    const Short *pT = pTMat + i * uiDim; //g_psEigenVectorDim16[i];
     for (k = 0; k<uiDim; k++)
     {
       iSum += pT[k] * block[k];
@@ -186,7 +186,7 @@ void xIKLTr(Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, siz
 
   //Short **pTMat = g_ppsEigenVector[uiTarDepth];
   UInt *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][g_aucLog2[iWidth]][g_aucLog2[iHeight]];
-  const Short (*pTMat)[256] = g_aiKLT256;
+  auto pTMat = (uiDim == 256) ? g_aiKLT256[0] : g_aiKLT64[0];
 #if KLT_DEBUG
   printf("\n\nKLT coeff after inverse quantization:\n");
 #endif
@@ -195,7 +195,7 @@ void xIKLTr(Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, siz
     iSum = 0;
     for (k = 0; k < uiDim; k++)
     {
-      iSum += pTMat[k][i] * coeff[scan[k]];
+      iSum += pTMat[k*uiDim + i] * coeff[scan[k]];
 #if KLT_DEBUG
       if (i == 0)
         printf("%4d, ", coeff[k]);
