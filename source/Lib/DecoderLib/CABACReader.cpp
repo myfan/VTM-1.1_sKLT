@@ -1267,6 +1267,9 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
   if( split )
   {
     {
+#if INTRA_KLT_MATRIX
+      if (trDepth == 0) klt_cu_flag(cu);
+#endif
 
 #if ENABLE_BMS
       if( partitioner.canSplit( TU_MAX_TR_SPLIT, cs ) )
@@ -1423,6 +1426,13 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
 #endif
     }
 
+#if INTRA_KLT_MATRIX
+#if HEVC_USE_RQT || ENABLE_BMS
+    if (trDepth == 0) klt_cu_flag(cu);
+#else
+    if( TU::getCbf( tu, COMPONENT_Y ) ) klt_cu_flag( cu );
+#endif
+#endif
 
     transform_unit( tu, cuCtx, chromaCbfs );
   }
@@ -2234,3 +2244,26 @@ unsigned CABACReader::decode_sparse_dt( DecisionTree& dt )
   return dt.dtt.ids[offset];
 }
 
+#if INTRA_KLT_MATRIX
+Void CABACReader::klt_cu_flag(CodingUnit& cu)
+{
+  const CodingStructure &cs = *cu.cs;
+
+  if (!((cs.sps->getSpsNext().getUseIntraKLT() && CU::isIntra(cu)) || (cs.sps->getSpsNext().getUseInterKLT() && CU::isInter(cu))) || isChroma(cu.chType))
+  {
+    return;
+  }
+
+  unsigned       depth = cu.qtDepth;
+  const unsigned cuWidth = cu.lwidth();
+  const unsigned cuHeight = cu.lheight();
+
+  RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET(STATS__CABAC_BITS__EMT_CU_FLAG);
+  if (cuWidth == 16 && cuHeight == 16)
+  {
+    bool uiCuFlag = m_BinDecoder.decodeBin(Ctx::KLTCuFlag(depth));
+    cu.kltFlag = uiCuFlag;
+    DTRACE(g_trace_ctx, D_SYNTAX, "emt_cu_flag() etype=%d pos=(%d,%d) emtCuFlag=%d\n", COMPONENT_Y, cu.lx(), cu.ly(), (int)cu.emtFlag);
+  }
+}
+#endif

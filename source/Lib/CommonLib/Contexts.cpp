@@ -600,6 +600,15 @@ const CtxSet ContextSetCfg::RdpcmDir = ContextSetCfg::addCtxSet
   {  CNU, CNU,},
 });
 
+#if INTRA_KLT_MATRIX
+const CtxSet ContextSetCfg::KLTCuFlag = ContextSetCfg::addCtxSet
+({
+  {  CNU, CNU, CNU, CNU, CNU, CNU,},
+  {  CNU, CNU, CNU, CNU, CNU, CNU,},
+  {  CNU, CNU, CNU, CNU, CNU, CNU,},
+});
+#endif
+
 const CtxSet ContextSetCfg::CrossCompPred = ContextSetCfg::addCtxSet
 ({
   {  154, 154, 154, 154, 154, 154, 154, 154, 154, 154,},

@@ -127,6 +127,9 @@ public:
   // residual coding (clause 7.3.8.11)
   void        residual_coding           ( TransformUnit&                tu,     ComponentID     compID );
   void        transform_skip_flag       ( TransformUnit&                tu,     ComponentID     compID );
+#if INTRA_KLT_MATRIX
+  void        klt_cu_flag               ( CodingUnit&                   cu );
+#endif
   void        explicit_rdpcm_mode       ( TransformUnit&                tu,     ComponentID     compID );
   int         last_sig_coeff            ( CoeffCodingContext&           cctx );
   void        residual_coding_subblock  ( CoeffCodingContext&           cctx,   TCoeff*         coeff  );

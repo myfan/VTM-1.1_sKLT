@@ -1579,6 +1579,10 @@ SPSNext::SPSNext( SPS& sps )
 #if ENABLE_WPP_PARALLELISM
   , m_NextDQP                   ( false )
 #endif
+#if INTRA_KLT_MATRIX
+  , m_IntraKLT                  ( false )
+  , m_InterKLT                  ( false )
+#endif
 
   // default values for additional parameters
   , m_CTUSize                   ( 0 )

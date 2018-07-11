@@ -996,7 +996,14 @@ void EncCu::xCheckRDCostIntra( CodingStructure *&tempCS, CodingStructure *&bestC
 
 
 
+#if INTRA_KLT_MATRIX
+  const SPS &sps = *tempCS->sps;
+  UChar considerEmtSecondPass = (sps.getSpsNext().getUseIntraKLT() && isLuma(partitioner.chType) && partitioner.currArea().lwidth() == 16 && partitioner.currArea().lheight() == 16) ? 1 : 0;
+
+  for (UChar kltCuFlag = 0; kltCuFlag <= considerEmtSecondPass; kltCuFlag++)
+#else
   for( UChar numPasses = 0; numPasses < 1; numPasses++ )
+#endif
   {
     //3) if interHad is 0, only try further modes if some intra mode was already better than inter
     if( m_pcEncCfg->getUsePbIntraFast() && !tempCS->slice->isIntra() && bestCU && CU::isInter( *bestCS->getCU( partitioner.chType ) ) && interHad == 0 )
@@ -1020,6 +1027,10 @@ void EncCu::xCheckRDCostIntra( CodingStructure *&tempCS, CodingStructure *&bestC
     cu.chromaQpAdj      = cu.transQuantBypass ? 0 : m_cuChromaQpOffsetIdxPlus1;
     cu.qp               = encTestMode.qp;
   //cu.ipcm             = false;
+
+#if INTRA_KLT_MATRIX
+    cu.kltFlag          = kltCuFlag;
+#endif
 
     CU::addPUs( cu );
 

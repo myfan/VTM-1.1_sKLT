@@ -532,6 +532,10 @@ Void HLSWriter::codeSPSNext( const SPSNext& spsNext, const bool usePCM )
   WRITE_FLAG( spsNext.getUseQTBT() ? 1 : 0,                                                     "qtbt_flag" );
   WRITE_FLAG( spsNext.getUseLargeCTU() ? 1 : 0,                                                 "large_ctu_flag" );
   WRITE_FLAG( spsNext.getDisableMotCompress() ? 1 : 0,                                          "disable_motion_compression_flag" );
+#if INTRA_KLT_MATRIX
+  WRITE_FLAG( spsNext.getUseIntraKLT() ? 1 : 0,                                                 "klt_intra_enabled_flag" );
+  WRITE_FLAG( spsNext.getUseInterKLT() ? 1 : 0,                                                 "klt_inter_enabled_flag" );
+#endif
 
   for( int k = 0; k < SPSNext::NumReservedFlags; k++ )
   {

@@ -303,6 +303,9 @@ Void IntraSearch::estIntraPredLumaQT( CodingUnit &cu, Partitioner &partitioner )
 
 
 
+#if INTRA_KLT_MATRIX
+  UChar kltUsageFlag = cu.kltFlag == 1 ? 2 : 1;
+#endif
 
 #if HEVC_USE_PART_SIZE
   UInt puIndex = 0;
@@ -343,6 +346,9 @@ Void IntraSearch::estIntraPredLumaQT( CodingUnit &cu, Partitioner &partitioner )
 #endif
 
 
+#if INTRA_KLT_MATRIX
+    if (kltUsageFlag != 2)
+#endif
     {
       // this should always be true
       CHECK( !pu.Y().valid(), "PU is not valid" );
@@ -445,7 +451,27 @@ Void IntraSearch::estIntraPredLumaQT( CodingUnit &cu, Partitioner &partitioner )
           uiRdModeList.push_back( i );
         }
       }
+#if INTRA_KLT_MATRIX
+      if( kltUsageFlag == 1 )
+      {
+        // Store the modes to be checked with RD
+        m_savedNumRdModes[0] = numModesForFullRD;
+        std::copy_n( uiRdModeList.begin(), numModesForFullRD, m_savedRdModeList[0] );
+      }
+#endif
     }
+#if INTRA_KLT_MATRIX
+    else //emtUsage = 2 (here we potentially reduce the number of modes that will be full-RD checked)
+    {
+      //this is necessary because we skip the candidates list calculation, since it was already obtained for the DCT-II. Now we load it
+      {
+        // Restore the modes to be checked with RD
+        numModesForFullRD = m_savedNumRdModes[0];
+        uiRdModeList.resize( numModesForFullRD );
+        std::copy_n( m_savedRdModeList[0], m_savedNumRdModes[0], uiRdModeList.begin() );
+      }
+    }
+#endif
 
 
     CHECK( numModesForFullRD != uiRdModeList.size(), "Inconsistent state!" );
@@ -1061,6 +1087,10 @@ Void IntraSearch::xEncSubdivCbfQT(CodingStructure &cs, Partitioner &partitioner,
 #if HEVC_USE_RQT || ENABLE_BMS
   if (subdiv)
   {
+#if INTRA_KLT_MATRIX
+    CodingUnit &currCU = *currTU.cu;
+    if( currDepth == 0 && bLuma ) m_CABACEstimator->klt_cu_flag( currCU );
+#endif
 
 #if ENABLE_BMS
     if( partitioner.canSplit( TU_MAX_TR_SPLIT, cs ) )
@@ -1085,6 +1115,15 @@ Void IntraSearch::xEncSubdivCbfQT(CodingStructure &cs, Partitioner &partitioner,
   else
 #endif
   {
+#if INTRA_KLT_MATRIX
+#if HEVC_USE_RQT || ENABLE_BMS
+    CodingUnit &currCU = *currTU.cu;
+    if( currDepth == 0 && bLuma ) m_CABACEstimator->klt_cu_flag( currCU );
+#else
+    if( bLuma && TU::getCbf( currTU, COMPONENT_Y ) ) m_CABACEstimator->klt_cu_flag( *currTU.cu );
+#endif
+
+#endif
     //===== Cbfs =====
     if (bLuma)
     {
@@ -1461,6 +1500,9 @@ Void IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
 
     checkTransformSkip &= TU::hasTransformSkipFlag( *tu.cs, tu.Y() );
     checkTransformSkip &= !cu.transQuantBypass;
+#if INTRA_KLT_MATRIX
+    checkTransformSkip &= !cu.kltFlag;
+#endif
 
     CHECK( !tu.Y().valid(), "Invalid TU" );
 

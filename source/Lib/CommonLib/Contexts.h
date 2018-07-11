@@ -190,6 +190,9 @@ public:
   static const CtxSet   TransquantBypassFlag;
   static const CtxSet   RdpcmFlag;
   static const CtxSet   RdpcmDir;
+#if INTRA_KLT_MATRIX
+  static const CtxSet   KLTCuFlag;
+#endif
   static const CtxSet   CrossCompPred;
   static const CtxSet   ChromaQpAdjFlag;
   static const CtxSet   ChromaQpAdjIdc;

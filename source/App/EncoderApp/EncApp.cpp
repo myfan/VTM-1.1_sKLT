@@ -216,6 +216,10 @@ Void EncApp::xInitLibCfg()
 #if ENABLE_WPP_PARALLELISM
   m_cEncLib.setUseAltDQPCoding                                   ( m_AltDQPCoding );
 #endif
+#if INTRA_KLT_MATRIX
+  m_cEncLib.setIntraKLT                                          ( m_KLT & 1 );
+  m_cEncLib.setInterKLT                                          ( ( m_KLT >> 1 ) & 1 );
+#endif
   // ADD_NEW_TOOL : (encoder app) add setting of tool enabling flags and associated parameters here
 
   m_cEncLib.setMaxCUWidth                                        ( m_QTBT ? m_uiCTUSize : m_uiMaxCUWidth );

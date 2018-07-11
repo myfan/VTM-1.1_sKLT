@@ -183,6 +183,11 @@ protected:
   unsigned  m_maxTotalCUDepth;
   unsigned  m_log2DiffMaxMinCodingBlockSize;
 
+#if INTRA_KLT_MATRIX
+  int       m_IntraKLT;
+  int       m_InterKLT;
+#endif
+
   bool      m_LargeCTU;
   bool      m_DisableMotionCompression;
   unsigned  m_MTTMode;
@@ -570,6 +575,13 @@ public:
   int       getCTUSize                      ()         const { return m_CTUSize; }
   void      setDualITree                    ( bool b )       { m_dualITree = b; }
   bool      getDualITree                    ()         const { return m_dualITree; }
+
+#if INTRA_KLT_MATRIX
+  void      setIntraKLT                     ( bool b )       { m_IntraKLT = b; }
+  bool      getIntraKLT                     ()         const { return m_IntraKLT; }
+  void      setInterKLT                     ( bool b )       { m_InterKLT = b; }
+  bool      getInterKLT                     ()         const { return m_InterKLT; }
+#endif
 
   void      setLargeCTU                     ( bool b )       { m_LargeCTU = b; }
   bool      getLargeCTU                     ()         const { return m_LargeCTU; }

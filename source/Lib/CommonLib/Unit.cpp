@@ -261,6 +261,9 @@ CodingUnit& CodingUnit::operator=( const CodingUnit& other )
 #if HEVC_TILES_WPP
   tileIdx           = other.tileIdx;
 #endif
+#if INTRA_KLT_MATRIX
+  kltFlag           = other.kltFlag;
+#endif
 
   return *this;
 }
@@ -282,6 +285,9 @@ Void CodingUnit::initData()
   rootCbf           = true;
 #if HEVC_TILES_WPP
   tileIdx           = 0;
+#endif
+#if INTRA_KLT_MATRIX
+  kltFlag = 0;
 #endif
 }
 

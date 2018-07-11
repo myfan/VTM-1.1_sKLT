@@ -590,7 +590,7 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
 #if INTRA_KLT_MATRIX
 
   //if( ucTrIdx != DCT2_HEVC )
-  if( iWidth == 16 && iHeight == 16 )
+  if (tu.cu->kltFlag)
   {
     xKLTr ( channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight);
   }
@@ -622,7 +622,7 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   const unsigned ucMode = 0;
   const unsigned ucTrIdx = 0;
   //if (ucTrIdx != DCT2_HEVC)
-  if (pCoeff.width == 16 && pCoeff.height == 16)
+  if (tu.cu->kltFlag)
   {
     xIKLTr      ( channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height);
   }

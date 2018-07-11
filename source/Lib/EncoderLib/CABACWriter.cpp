@@ -1404,6 +1404,9 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
       }
 #endif
     }
+#if INTRA_KLT_MATRIX
+    if (trDepth == 0) klt_cu_flag(cu);
+#endif
 
 #if ENABLE_BMS
     if( partitioner.canSplit( TU_MAX_TR_SPLIT, cs ) )
@@ -1463,6 +1466,13 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
       }
     }
 
+#if INTRA_KLT_MATRIX
+#if HEVC_USE_RQT || ENABLE_BMS
+    if( trDepth == 0 ) klt_cu_flag( cu );
+#else
+    if( TU::getCbf( tu, COMPONENT_Y ) ) klt_cu_flag( cu );
+#endif
+#endif
 
     transform_unit( tu, cuCtx, chromaCbfs );
   }
@@ -2269,5 +2279,27 @@ void CABACWriter::encode_sparse_dt( DecisionTree& dt, unsigned toCodeId )
   DTRACE( g_trace_ctx, D_DECISIONTREE,    "Found an end-node of the tree\n" );
   return;
 }
+
+#if INTRA_KLT_MATRIX
+Void CABACWriter::klt_cu_flag( const CodingUnit& cu )
+{
+  const CodingStructure& cs = *cu.cs;
+
+  if( !( ( cs.sps->getSpsNext().getUseIntraKLT() && CU::isIntra( cu ) ) || ( cs.sps->getSpsNext().getUseInterKLT() && CU::isInter( cu ) ) ) || isChroma( cu.chType ) )
+  {
+    return;
+  }
+
+  unsigned depth          = cu.qtDepth;
+  const unsigned cuWidth  = cu.lwidth();
+  const unsigned cuHeight = cu.lheight();
+
+  if( cuWidth == 16 && cuHeight == 16 )
+  {
+    m_BinEncoder.encodeBin( cu.kltFlag, Ctx::KLTCuFlag( depth ) );
+    DTRACE( g_trace_ctx, D_SYNTAX, "emt_cu_flag() etype=%d pos=(%d,%d) emtCuFlag=%d\n", COMPONENT_Y, cu.lx(), cu.ly(), ( int ) cu.emtFlag );
+  }
+}
+#endif
 
 //! \}

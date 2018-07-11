@@ -804,6 +804,10 @@ private:
 #if ENABLE_WPP_PARALLELISM
   bool              m_NextDQP;
 #endif
+#if INTRA_KLT_MATRIX
+  bool              m_IntraKLT;                   // 18
+  bool              m_InterKLT;                   // 19
+#endif
 
 public:
   const static int  NumReservedFlags = 32 - 27; /* current number of tool enabling flags */
@@ -842,6 +846,12 @@ public:
   bool      getUseNextDQP         ()                                      const     { return m_NextDQP; }
 #endif
 
+#if INTRA_KLT_MATRIX
+  void      setUseIntraKLT        ( bool b )                                        { m_IntraKLT = b; }
+  bool      getUseIntraKLT        ()                                      const     { return m_IntraKLT; }
+  void      setUseInterKLT        ( bool b )                                        { m_InterKLT = b; }
+  bool      getUseInterKLT        ()                                      const     { return m_InterKLT; }
+#endif
   //=====  additional parameters  =====
   // qtbt
   void      setCTUSize            ( unsigned    ctuSize )                           { m_CTUSize = ctuSize; }

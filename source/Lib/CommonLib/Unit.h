@@ -301,6 +301,9 @@ struct CodingUnit : public UnitArea
 #if HEVC_TILES_WPP
   UInt           tileIdx;
 #endif
+#if INTRA_KLT_MATRIX
+  UChar          kltFlag;
+#endif
 
   // needed for fast imv mode decisions
   SChar          imvNumCand;
