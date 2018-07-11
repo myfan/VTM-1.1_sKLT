@@ -89,6 +89,8 @@
 #define INTRA_RESI_OUTPUT                                 0
 #define INTRA_KLT_MATRIX                                  1
 #if INTRA_KLT_MATRIX
+#define KLT_WIDTH                                         8
+#define KLT_HEIGHT                                        8
 #define KLT_DEBUG                                         0
 #endif
 

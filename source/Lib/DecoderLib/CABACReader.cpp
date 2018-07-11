@@ -1430,7 +1430,7 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
 #if HEVC_USE_RQT || ENABLE_BMS
     if (trDepth == 0) klt_cu_flag(cu);
 #else
-    if( TU::getCbf( tu, COMPONENT_Y ) ) klt_cu_flag( cu );
+    klt_cu_flag( cu );
 #endif
 #endif
 
@@ -2259,7 +2259,7 @@ Void CABACReader::klt_cu_flag(CodingUnit& cu)
   const unsigned cuHeight = cu.lheight();
 
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET(STATS__CABAC_BITS__EMT_CU_FLAG);
-  if (cuWidth == 16 && cuHeight == 16)
+  if (cuWidth == KLT_WIDTH && cuHeight == KLT_HEIGHT)
   {
     bool uiCuFlag = m_BinDecoder.decodeBin(Ctx::KLTCuFlag(depth));
     cu.kltFlag = uiCuFlag;

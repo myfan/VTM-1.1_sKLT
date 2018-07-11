@@ -1120,7 +1120,7 @@ Void IntraSearch::xEncSubdivCbfQT(CodingStructure &cs, Partitioner &partitioner,
     CodingUnit &currCU = *currTU.cu;
     if( currDepth == 0 && bLuma ) m_CABACEstimator->klt_cu_flag( currCU );
 #else
-    if( bLuma && TU::getCbf( currTU, COMPONENT_Y ) ) m_CABACEstimator->klt_cu_flag( *currTU.cu );
+    if( bLuma ) m_CABACEstimator->klt_cu_flag( *currTU.cu );
 #endif
 
 #endif

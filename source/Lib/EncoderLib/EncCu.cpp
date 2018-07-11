@@ -998,7 +998,7 @@ void EncCu::xCheckRDCostIntra( CodingStructure *&tempCS, CodingStructure *&bestC
 
 #if INTRA_KLT_MATRIX
   const SPS &sps = *tempCS->sps;
-  UChar considerEmtSecondPass = (sps.getSpsNext().getUseIntraKLT() && isLuma(partitioner.chType) && partitioner.currArea().lwidth() == 16 && partitioner.currArea().lheight() == 16) ? 1 : 0;
+  UChar considerEmtSecondPass = (sps.getSpsNext().getUseIntraKLT() && isLuma(partitioner.chType) && partitioner.currArea().lwidth() == KLT_WIDTH && partitioner.currArea().lheight() == KLT_HEIGHT) ? 1 : 0;
 
   for (UChar kltCuFlag = 0; kltCuFlag <= considerEmtSecondPass; kltCuFlag++)
 #else

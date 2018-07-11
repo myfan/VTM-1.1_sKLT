@@ -1470,7 +1470,7 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
 #if HEVC_USE_RQT || ENABLE_BMS
     if( trDepth == 0 ) klt_cu_flag( cu );
 #else
-    if( TU::getCbf( tu, COMPONENT_Y ) ) klt_cu_flag( cu );
+    klt_cu_flag( cu );
 #endif
 #endif
 
@@ -2294,7 +2294,7 @@ Void CABACWriter::klt_cu_flag( const CodingUnit& cu )
   const unsigned cuWidth  = cu.lwidth();
   const unsigned cuHeight = cu.lheight();
 
-  if( cuWidth == 16 && cuHeight == 16 )
+  if( cuWidth == KLT_WIDTH && cuHeight == KLT_HEIGHT )
   {
     m_BinEncoder.encodeBin( cu.kltFlag, Ctx::KLTCuFlag( depth ) );
     DTRACE( g_trace_ctx, D_SYNTAX, "emt_cu_flag() etype=%d pos=(%d,%d) emtCuFlag=%d\n", COMPONENT_Y, cu.lx(), cu.ly(), ( int ) cu.emtFlag );
