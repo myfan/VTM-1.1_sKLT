@@ -138,7 +138,7 @@ void xKLTr(Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, size
 
   //Short **pTMat = g_ppsEigenVector[uiTarDepth];
   UInt *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][g_aucLog2[iWidth]][g_aucLog2[iHeight]];
-  const TMatrixCoeff *pTMat = (uiDim == 256) ? g_aiKLT256[0] : g_aiKLT64[0];
+  const TMatrixCoeff *pTMat = (uiDim == 256) ? g_aiKLT16x16[0] : g_aiKLT8x8[0];
 #if KLT_DEBUG
   printf("residual block:\n");
 #endif
@@ -186,7 +186,7 @@ void xIKLTr(Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, siz
 
   //Short **pTMat = g_ppsEigenVector[uiTarDepth];
   UInt *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][g_aucLog2[iWidth]][g_aucLog2[iHeight]];
-  auto pTMat = (uiDim == 256) ? g_aiKLT256[0] : g_aiKLT64[0];
+  auto pTMat = (uiDim == 256) ? g_aiKLT16x16[0] : g_aiKLT8x8[0];
 #if KLT_DEBUG
   printf("\n\nKLT coeff after inverse quantization:\n");
 #endif
