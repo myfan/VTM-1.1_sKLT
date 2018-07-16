@@ -762,8 +762,10 @@ Void EncLib::xInitSPS(SPS &sps)
   sps.getSpsNext().setUseNextDQP            ( m_AltDQPCoding );
 #endif
 
+#if INTRA_KLT_MATRIX
   sps.getSpsNext().setUseIntraKLT           ( m_IntraKLT );
   sps.getSpsNext().setUseInterKLT           ( m_InterKLT );
+#endif
   // ADD_NEW_TOOL : (encoder lib) set tool enabling flags and associated parameters here
 
   Int minCUSize = ( /*sps.getSpsNext().getUseQTBT() ? 1 << MIN_CU_LOG2 :*/ sps.getMaxCUWidth() >> sps.getLog2DiffMaxMinCodingBlockSize() );

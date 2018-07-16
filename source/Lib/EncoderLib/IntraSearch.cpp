@@ -1287,12 +1287,12 @@ Void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
 
 #if INTRA_RESI_OUTPUT
   extern std::string statLogFileName;
-  if (compID == COMPONENT_Y && tu.lwidth() == 8 && tu.lheight() == 8)
+  if (compID == COMPONENT_Y && tu.lwidth() == KLT_WIDTH && tu.lheight() == KLT_HEIGHT)
   {
     const UInt uiDirMode = PU::getFinalIntraMode(pu, toChannelType(compID));
     static ofstream fout(statLogFileName);
 
-    fout << uiDirMode << " ";
+    fout << (int)g_intraMode65to33AngMapping[uiDirMode] << " ";
     for (int y = 0, pos = 0; y < piResi.height; y++, pos += piResi.stride)
     {
       for (int x = 0; x < piResi.width; x++)
