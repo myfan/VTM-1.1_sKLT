@@ -117,7 +117,7 @@ void TrQuant::copyState( const TrQuant& other )
 *  \param coeff pointer to output data (transform coefficients)
 *  \param uiTrSize transform size (uiTrSize x uiTrSize)
 */
-void xKLTr(Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, size_t width, size_t height)  //void xKLTr(Int bitDepth, Pel *block, Short *coeff, UInt uiTrSize)  
+void xKLTr(Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, size_t width, size_t height, const TMatrixCoeff *pTMat)
 {
   Int i, k, iSum;
   const int iWidth = (int)width;
@@ -138,7 +138,6 @@ void xKLTr(Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, size
 
   //Short **pTMat = g_ppsEigenVector[uiTarDepth];
   UInt *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][g_aucLog2[iWidth]][g_aucLog2[iHeight]];
-  const TMatrixCoeff *pTMat = (uiDim == 256) ? g_aiKLT16x16[0] : g_aiKLT8x8[0];
 #if KLT_DEBUG
   printf("residual block:\n");
 #endif
@@ -170,7 +169,7 @@ void xKLTr(Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, size
 *  \param block pointer to output data (residual)
 *  \param uiTrSize transform size (uiTrSize x uiTrSize)
 */
-void xIKLTr(Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, size_t width, size_t height)  //void xIKLTr(Short *coeff, Pel *block, UInt uiTrSize) 
+void xIKLTr(Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, size_t width, size_t height, const TMatrixCoeff *pTMat)  //void xIKLTr(Short *coeff, Pel *block, UInt uiTrSize) 
 {
   Int i, k, iSum;
   const int iWidth = (int)width;
@@ -186,7 +185,6 @@ void xIKLTr(Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, siz
 
   //Short **pTMat = g_ppsEigenVector[uiTarDepth];
   UInt *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][g_aucLog2[iWidth]][g_aucLog2[iHeight]];
-  auto pTMat = (uiDim == 256) ? g_aiKLT16x16[0] : g_aiKLT8x8[0];
 #if KLT_DEBUG
   printf("\n\nKLT coeff after inverse quantization:\n");
 #endif
@@ -592,7 +590,10 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   //if( ucTrIdx != DCT2_HEVC )
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    xKLTr ( channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight);
+    const PredictionUnit &pu = *(tu.cs->getPU(tu.blocks[compID].pos(), toChannelType(compID)));
+    const UInt uiDirMode = PU::getFinalIntraMode(pu, toChannelType(compID));
+    const TMatrixCoeff *pTMat = g_aiKLT8x8[0];
+    xKLTr ( channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, pTMat);
   }
   else
 #endif
@@ -624,7 +625,8 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   //if (ucTrIdx != DCT2_HEVC)
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    xIKLTr      ( channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height);
+    auto pTMat = g_aiKLT8x8[0];
+    xIKLTr      ( channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, pTMat);
   }
   else
 #endif
