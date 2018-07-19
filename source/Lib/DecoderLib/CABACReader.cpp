@@ -2259,7 +2259,7 @@ Void CABACReader::klt_cu_flag(CodingUnit& cu)
   const unsigned cuHeight = cu.lheight();
 
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET(STATS__CABAC_BITS__EMT_CU_FLAG);
-  if (cuWidth == KLT_WIDTH && cuHeight == KLT_HEIGHT)
+  if ( (cuWidth == 8 && cuHeight == 8) || (cuWidth == 8 && cuHeight == 4) )
   {
     bool uiCuFlag = m_BinDecoder.decodeBin(Ctx::KLTCuFlag(depth));
     cu.kltFlag = uiCuFlag;

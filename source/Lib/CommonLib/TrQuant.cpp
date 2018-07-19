@@ -592,7 +592,13 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   {
     const PredictionUnit &pu = *(tu.cs->getPU(tu.blocks[compID].pos(), toChannelType(compID)));
     const UInt uiDirMode = PU::getFinalIntraMode(pu, toChannelType(compID));
-    const TMatrixCoeff *pTMat = g_aiKLT8x8[0];
+    TMatrixCoeff *pTMat;
+    if (iWidth == 8 && iHeight == 8)
+      pTMat = g_aiKLT8x8[0];
+    else if (iWidth == 8 && iHeight == 4)
+      pTMat = g_aiKLT8x4[0];
+    else
+      assert(0);
     xKLTr ( channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, pTMat);
   }
   else
@@ -625,7 +631,13 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   //if (ucTrIdx != DCT2_HEVC)
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    auto pTMat = g_aiKLT8x8[0];
+    TMatrixCoeff *pTMat;
+    if (pCoeff.width == 8 && pCoeff.height == 8)
+      pTMat = g_aiKLT8x8[0];
+    else if (pCoeff.width == 8 && pCoeff.height == 4)
+      pTMat = g_aiKLT8x4[0];
+    else
+      assert(0);
     xIKLTr      ( channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, pTMat);
   }
   else
