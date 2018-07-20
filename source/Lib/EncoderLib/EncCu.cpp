@@ -1000,7 +1000,7 @@ void EncCu::xCheckRDCostIntra( CodingStructure *&tempCS, CodingStructure *&bestC
   const SPS &sps = *tempCS->sps;
   const SizeType width = partitioner.currArea().lwidth();
   const SizeType height = partitioner.currArea().lheight();
-  Bool isKLTSize = (width == 8 && height == 8) || (width == 8 && height == 4) || (width == 4 && height == 8);
+  Bool isKLTSize = (width == 8 && height == 8) || (width == 16 && height == 4);
   UChar considerEmtSecondPass = (sps.getSpsNext().getUseIntraKLT() && isLuma(partitioner.chType) && isKLTSize) ? 1 : 0;
 
   for (UChar kltCuFlag = 0; kltCuFlag <= considerEmtSecondPass; kltCuFlag++)

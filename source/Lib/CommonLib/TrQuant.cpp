@@ -595,10 +595,8 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
     TMatrixCoeff *pTMat;
     if (iWidth == 8 && iHeight == 8)
       pTMat = g_aiKLT8x8[0];
-    else if (iWidth == 8 && iHeight == 4)
-      pTMat = g_aiKLT8x4[0];
-    else if (iWidth == 4 && iHeight == 8)
-      pTMat = g_aiKLT4x8[0];
+    else if (iWidth == 16 && iHeight == 4)
+      pTMat = g_aiKLT16x4[0];
     else
       assert(0);
     xKLTr ( channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, pTMat);
@@ -636,10 +634,8 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
     TMatrixCoeff *pTMat;
     if (pCoeff.width == 8 && pCoeff.height == 8)
       pTMat = g_aiKLT8x8[0];
-    else if (pCoeff.width == 8 && pCoeff.height == 4)
-      pTMat = g_aiKLT8x4[0];
-    else if (pCoeff.width == 4 && pCoeff.height == 8)
-      pTMat = g_aiKLT4x8[0];
+    else if (pCoeff.width == 16 && pCoeff.height == 4)
+      pTMat = g_aiKLT16x4[0];
     else
       assert(0);
     xIKLTr      ( channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, pTMat);
