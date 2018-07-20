@@ -597,6 +597,8 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
       pTMat = g_aiKLT8x8[0];
     else if (iWidth == 8 && iHeight == 4)
       pTMat = g_aiKLT8x4[0];
+    else if (iWidth == 4 && iHeight == 8)
+      pTMat = g_aiKLT4x8[0];
     else
       assert(0);
     xKLTr ( channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, pTMat);
@@ -636,6 +638,8 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
       pTMat = g_aiKLT8x8[0];
     else if (pCoeff.width == 8 && pCoeff.height == 4)
       pTMat = g_aiKLT8x4[0];
+    else if (pCoeff.width == 4 && pCoeff.height == 8)
+      pTMat = g_aiKLT4x8[0];
     else
       assert(0);
     xIKLTr      ( channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, pTMat);
