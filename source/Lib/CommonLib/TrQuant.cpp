@@ -599,6 +599,10 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
       pTMat = g_aiKLT16x4[0];
     else if (iWidth == 4 && iHeight == 16)
       pTMat = g_aiKLT4x16[0];
+    else if (iWidth == 16 && iHeight == 8)
+      pTMat = g_aiKLT16x8[0];
+    else if (iWidth == 8 && iHeight == 16)
+      pTMat = g_aiKLT8x16[0];
     else if (iWidth == 16 && iHeight == 16)
       pTMat = g_aiKLT16x16[0];
     else
@@ -642,6 +646,10 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
       pTMat = g_aiKLT16x4[0];
     else if (pCoeff.width == 4 && pCoeff.height == 16)
       pTMat = g_aiKLT4x16[0];
+    else if (pCoeff.width == 16 && pCoeff.height == 8)
+      pTMat = g_aiKLT16x8[0];
+    else if (pCoeff.width == 8 && pCoeff.height == 16)
+      pTMat = g_aiKLT8x16[0];
     else if (pCoeff.width == 16 && pCoeff.height == 16)
       pTMat = g_aiKLT16x16[0];
     else
