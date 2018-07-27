@@ -214,6 +214,131 @@ void xIKLTr(Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, siz
     }
   }
 }
+
+void xTrMxN_EMT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, Int iWidth, Int iHeight, const int maxLog2TrDynamicRange,
+  const UChar ucMode, const UChar ucTrIdx, const bool use65intraModes
+  , const bool useQTBT
+)
+{
+  const Int TRANSFORM_MATRIX_SHIFT = g_transformMatrixShift[TRANSFORM_FORWARD];
+  const Int shift_1st = ((g_aucLog2[iWidth]) + bitDepth + TRANSFORM_MATRIX_SHIFT) - maxLog2TrDynamicRange + COM16_C806_TRANS_PREC;
+  const Int shift_2nd = (g_aucLog2[iHeight]) + TRANSFORM_MATRIX_SHIFT + COM16_C806_TRANS_PREC;
+  const UInt transformWidthIndex = g_aucLog2[iWidth] - 1;  //nLog2WidthMinus1, since transform start from 2-point
+  const UInt transformHeightIndex = g_aucLog2[iHeight] - 1;  //nLog2HeightMinus1, since transform start from 2-point
+  const Int iZeroOutThresh = JVET_C0024_ZERO_OUT_TH;
+
+  Int iSkipWidth = 0, iSkipHeight = 0;
+
+  CHECK(shift_1st < 0, "Negative shift");
+  CHECK(shift_2nd < 0, "Negative shift");
+
+  ALIGN_DATA(MEMORY_ALIGN_DEF_SIZE, TCoeff block[MAX_TU_SIZE * MAX_TU_SIZE]);
+
+#if SEPARATE_KLT_DEBUG
+  printf("\nresidual block:\n");
+#endif
+  for (Int y = 0; y < iHeight; y++)
+  {
+    for (Int x = 0; x < iWidth; x++)
+    {
+#if SEPARATE_KLT_DEBUG
+      printf("%4d, ", residual[(y * stride) + x]);
+#endif
+      block[(y * iWidth) + x] = residual[(y * stride) + x];
+    }
+#if SEPARATE_KLT_DEBUG
+    printf("\n");
+#endif
+  }
+
+  TCoeff *tmp = (TCoeff *)alloca(iWidth * iHeight * sizeof(TCoeff));
+
+  fastForwardKLT_B8(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
+#if SEPARATE_KLT_DEBUG
+  printf("\nCoefficient block after Row (1st) KLT:\n");
+  for (Int y = 0; y < iHeight; y++)
+  {
+    for (Int x = 0; x < iWidth; x++)
+    {
+      printf("%4d, ", tmp[(y * iWidth) + x]);
+    }
+    printf("\n");
+  }
+#endif
+  fastForwardKLT_B16(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+#if SEPARATE_KLT_DEBUG
+  printf("\nCoefficient block after Column (2nd) KLT:\n");
+  for (Int y = 0; y < iHeight; y++)
+  {
+    for (Int x = 0; x < iWidth; x++)
+    {
+      printf("%4d, ", coeff[(y * iWidth) + x]);
+    }
+    printf("\n");
+  }
+#endif
+}
+
+void xITrMxN_EMT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, Int iWidth, Int iHeight, UInt uiSkipWidth, UInt uiSkipHeight, const Int maxLog2TrDynamicRange, UChar ucMode, UChar ucTrIdx, bool use65intraModes )
+{
+  const Int TRANSFORM_MATRIX_SHIFT = g_transformMatrixShift[TRANSFORM_INVERSE];
+  const TCoeff clipMinimum         = -( 1 << maxLog2TrDynamicRange );
+  const TCoeff clipMaximum         =  ( 1 << maxLog2TrDynamicRange ) - 1;
+  const Int shift_1st              =   TRANSFORM_MATRIX_SHIFT + 1 + COM16_C806_TRANS_PREC; //1 has been added to shift_1st at the expense of shift_2nd
+  const Int shift_2nd              = ( TRANSFORM_MATRIX_SHIFT + maxLog2TrDynamicRange - 1 ) - bitDepth + COM16_C806_TRANS_PREC;
+  const UInt transformWidthIndex  = g_aucLog2[iWidth ] - 1;  //nLog2WidthMinus1, since transform start from 2-point
+  const UInt transformHeightIndex = g_aucLog2[iHeight] - 1;  //nLog2HeightMinus1, since transform start from 2-point
+
+  CHECK( shift_1st < 0, "Negative shift" );
+  CHECK( shift_2nd < 0, "Negative shift" );
+
+  TCoeff *tmp   = ( TCoeff * ) alloca( iWidth * iHeight * sizeof( TCoeff ) );
+  TCoeff *block = ( TCoeff * ) alloca( iWidth * iHeight * sizeof( TCoeff ) );
+
+#if SEPARATE_KLT_DEBUG
+  printf("\nCoefficient block after Quantization:\n");
+  for (Int y = 0; y < iHeight; y++)
+  {
+    for (Int x = 0; x < iWidth; x++)
+    {
+      printf("%4d, ", coeff[(y * iWidth) + x]);
+    }
+    printf("\n");
+  }
+#endif
+  fastInverseKLT_B16(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+#if SEPARATE_KLT_DEBUG
+  printf("\nCoefficient block after inverse Column (1st) KLT :\n");
+  for (Int y = 0; y < iHeight; y++)
+  {
+    for (Int x = 0; x < iWidth; x++)
+    {
+      printf("%4d, ", tmp[(y * iWidth) + x]);
+    }
+    printf("\n");
+  }
+#endif
+  fastInverseKLT_B8(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
+
+  for( Int y = 0; y < iHeight; y++ )
+  {
+    for( Int x = 0; x < iWidth; x++ )
+    {
+      residual[( y * stride ) + x] = Pel( block[( y * iWidth ) + x] );
+    }
+  }
+#if SEPARATE_KLT_DEBUG
+  printf("\nResidual block after inverse Row (2st) KLT :\n");
+  for (Int y = 0; y < iHeight; y++)
+  {
+    for (Int x = 0; x < iWidth; x++)
+    {
+      printf("%4d, ", residual[(y * stride) + x]);
+    }
+    printf("\n");
+  }
+#endif
+}
 #endif
 
 /** MxN forward transform (2D)
@@ -586,10 +711,19 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   const bool     useDST          = TU::useDST( tu, compID );
 #endif
 #if INTRA_KLT_MATRIX
-
+  //const unsigned ucMode = getEmtMode(tu, compID);
+  //const unsigned ucTrIdx = getEmtTrIdx(tu, compID);
+  const unsigned ucMode = 0;
+  const unsigned ucTrIdx = tu.cu->kltFlag;
   //if( ucTrIdx != DCT2_HEVC )
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
+    if (iWidth == 8 && iHeight == 16)
+    {
+      xTrMxN_EMT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false, m_rectTUs);
+      return;
+    }
+
     const PredictionUnit &pu = *(tu.cs->getPU(tu.blocks[compID].pos(), toChannelType(compID)));
     const UInt uiDirMode = PU::getFinalIntraMode(pu, toChannelType(compID));
     TMatrixCoeff *pTMat;
@@ -601,8 +735,6 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
       pTMat = g_aiKLT4x16[0];
     else if (iWidth == 16 && iHeight == 8)
       pTMat = g_aiKLT16x8[0];
-    else if (iWidth == 8 && iHeight == 16)
-      pTMat = g_aiKLT8x16[0];
     else if (iWidth == 16 && iHeight == 16)
       pTMat = g_aiKLT16x16[0];
     else
@@ -636,9 +768,17 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
 
   const unsigned ucMode = 0;
   const unsigned ucTrIdx = 0;
+
+  Int iSkipWidth = 0, iSkipHeight = 0;
+
   //if (ucTrIdx != DCT2_HEVC)
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
+    if (pCoeff.width == 8 && pCoeff.height == 16)
+    {
+      xITrMxN_EMT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
+      return;
+    }
     TMatrixCoeff *pTMat;
     if (pCoeff.width == 8 && pCoeff.height == 8)
       pTMat = g_aiKLT8x8[0];
@@ -648,8 +788,6 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
       pTMat = g_aiKLT4x16[0];
     else if (pCoeff.width == 16 && pCoeff.height == 8)
       pTMat = g_aiKLT16x8[0];
-    else if (pCoeff.width == 8 && pCoeff.height == 16)
-      pTMat = g_aiKLT8x16[0];
     else if (pCoeff.width == 16 && pCoeff.height == 16)
       pTMat = g_aiKLT16x16[0];
     else

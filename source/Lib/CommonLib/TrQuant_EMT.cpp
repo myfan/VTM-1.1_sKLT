@@ -1602,5 +1602,59 @@ void fastInverseDST7_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
   }
 }
 
+#if INTRA_KLT_MATRIX
+void fastForwardKLT_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+{
+  _fastForwardMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, g_aiKLT8x16Row[0] );
+}
+
+void fastInverseKLT_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+{
+  _fastInverseMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, g_aiKLT8x16Row[0] );
+}
 
 
+void fastForwardKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+{
+  _fastForwardMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, g_aiKLT8x16Col[0] );
+}
+
+void fastInverseKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+{
+  _fastInverseMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, g_aiKLT8x16Col[0] );
+}
+
+
+void fastForwardKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+{
+  _fastForwardMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, g_aiTr32[DST7][0] );
+}
+
+void fastInverseKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+{
+  _fastInverseMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, g_aiTr32[DST7][0] );
+}
+
+
+void fastForwardKLT_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+{
+  _fastForwardMM< 64 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, g_aiTr64[DST7][0] );
+}
+
+void fastInverseKLT_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+{
+  _fastInverseMM< 64 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, g_aiTr64[DST7][0] );
+}
+
+
+void fastForwardKLT_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+{
+  _fastForwardMM< 128 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, g_aiTr128[DST7][0] );
+}
+
+
+void fastInverseKLT_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+{
+  _fastInverseMM< 128 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, g_aiTr128[DST7][0] );
+}
+#endif

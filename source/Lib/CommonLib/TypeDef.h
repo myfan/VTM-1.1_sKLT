@@ -92,6 +92,7 @@
 #define KLT_WIDTH                                         8
 #define KLT_HEIGHT                                        8
 #define KLT_DEBUG                                         0
+#define SEPARATE_KLT_DEBUG                                0
 #endif
 
 #ifndef ENABLE_TRACING

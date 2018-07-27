@@ -1030,6 +1030,20 @@ Void QuantRDOQ::xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, 
   {
     piDstCoeff[ cctx.blockPos( scanPos ) ] = 0;
   }
+#if SEPARATE_KLT_DEBUG
+  if (uiWidth == 8 && uiHeight == 16)
+  {
+    printf("\nCoefficient block after quantization :\n");
+    for (Int y = 0; y < uiHeight; y++)
+    {
+      for (Int x = 0; x < uiWidth; x++)
+      {
+        printf("%4d, ", piDstCoeff[(y * uiWidth) + x]);
+      }
+      printf("\n");
+    }
+  }
+#endif
 
 #if HEVC_USE_SIGN_HIDING
   if( cctx.signHiding() && uiAbsSum>=2)
