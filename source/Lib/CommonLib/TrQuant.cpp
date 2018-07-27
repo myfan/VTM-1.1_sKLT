@@ -221,8 +221,8 @@ void xTrMxN_EMT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
 )
 {
   const Int TRANSFORM_MATRIX_SHIFT = g_transformMatrixShift[TRANSFORM_FORWARD];
-  const Int shift_1st = ((g_aucLog2[iWidth]) + bitDepth + TRANSFORM_MATRIX_SHIFT) - maxLog2TrDynamicRange + COM16_C806_TRANS_PREC;
-  const Int shift_2nd = (g_aucLog2[iHeight]) + TRANSFORM_MATRIX_SHIFT + COM16_C806_TRANS_PREC;
+  const Int shift_1st = ((g_aucLog2[iWidth]) + bitDepth + TRANSFORM_MATRIX_SHIFT) - maxLog2TrDynamicRange + COM16_C806_TRANS_PREC_KLT;
+  const Int shift_2nd = (g_aucLog2[iHeight]) + TRANSFORM_MATRIX_SHIFT + COM16_C806_TRANS_PREC_KLT;
   const UInt transformWidthIndex = g_aucLog2[iWidth] - 1;  //nLog2WidthMinus1, since transform start from 2-point
   const UInt transformHeightIndex = g_aucLog2[iHeight] - 1;  //nLog2HeightMinus1, since transform start from 2-point
   const Int iZeroOutThresh = JVET_C0024_ZERO_OUT_TH;
@@ -284,8 +284,8 @@ void xITrMxN_EMT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
   const Int TRANSFORM_MATRIX_SHIFT = g_transformMatrixShift[TRANSFORM_INVERSE];
   const TCoeff clipMinimum         = -( 1 << maxLog2TrDynamicRange );
   const TCoeff clipMaximum         =  ( 1 << maxLog2TrDynamicRange ) - 1;
-  const Int shift_1st              =   TRANSFORM_MATRIX_SHIFT + 1 + COM16_C806_TRANS_PREC; //1 has been added to shift_1st at the expense of shift_2nd
-  const Int shift_2nd              = ( TRANSFORM_MATRIX_SHIFT + maxLog2TrDynamicRange - 1 ) - bitDepth + COM16_C806_TRANS_PREC;
+  const Int shift_1st              =   TRANSFORM_MATRIX_SHIFT + 1 + COM16_C806_TRANS_PREC_KLT; //1 has been added to shift_1st at the expense of shift_2nd
+  const Int shift_2nd              = ( TRANSFORM_MATRIX_SHIFT + maxLog2TrDynamicRange - 1 ) - bitDepth + COM16_C806_TRANS_PREC_KLT;
   const UInt transformWidthIndex  = g_aucLog2[iWidth ] - 1;  //nLog2WidthMinus1, since transform start from 2-point
   const UInt transformHeightIndex = g_aucLog2[iHeight] - 1;  //nLog2HeightMinus1, since transform start from 2-point
 
