@@ -252,8 +252,20 @@ void xTrMxN_EMT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
   }
 
   TCoeff *tmp = (TCoeff *)alloca(iWidth * iHeight * sizeof(TCoeff));
-
-  fastForwardKLT_B8(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
+  if (iWidth == 8 && iHeight == 16)
+  {
+    fastForwardKLT8x16_R8(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
+    fastForwardKLT8x16_L16(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+  }
+  else if (iWidth == 16 && iHeight == 16)
+  {
+    fastForwardKLT16x16_R16(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
+    fastForwardKLT16x16_L16(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+  }
+  else
+  {
+    assert(0);
+  }
 #if SEPARATE_KLT_DEBUG
   printf("\nCoefficient block after Row (1st) KLT:\n");
   for (Int y = 0; y < iHeight; y++)
@@ -265,7 +277,6 @@ void xTrMxN_EMT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
     printf("\n");
   }
 #endif
-  fastForwardKLT_B16(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
 #if SEPARATE_KLT_DEBUG
   printf("\nCoefficient block after Column (2nd) KLT:\n");
   for (Int y = 0; y < iHeight; y++)
@@ -306,7 +317,20 @@ void xITrMxN_EMT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
     printf("\n");
   }
 #endif
-  fastInverseKLT_B16(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+  if (iWidth == 8 && iHeight == 16)
+  {
+    fastInverseKLT8x16_L16(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+    fastInverseKLT8x16_R8(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
+  }
+  else  if (iWidth == 16 && iHeight == 16)
+  {
+    fastInverseKLT16x16_L16(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+    fastInverseKLT16x16_R16(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
+  }
+  else
+  {
+    assert(0);
+  }
 #if SEPARATE_KLT_DEBUG
   printf("\nCoefficient block after inverse Column (1st) KLT :\n");
   for (Int y = 0; y < iHeight; y++)
@@ -318,7 +342,6 @@ void xITrMxN_EMT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
     printf("\n");
   }
 #endif
-  fastInverseKLT_B8(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
 
   for( Int y = 0; y < iHeight; y++ )
   {
@@ -718,7 +741,7 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   //if( ucTrIdx != DCT2_HEVC )
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    if (iWidth == 8 && iHeight == 16)
+    if ((iWidth == 8 && iHeight == 16) || (iWidth == 16 && iHeight == 16))
     {
       xTrMxN_EMT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false, m_rectTUs);
       return;
@@ -735,8 +758,6 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
       pTMat = g_aiKLT4x16[0];
     else if (iWidth == 16 && iHeight == 8)
       pTMat = g_aiKLT16x8[0];
-    else if (iWidth == 16 && iHeight == 16)
-      pTMat = g_aiKLT16x16[0];
     else
       assert(0);
     xKLTr ( channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, pTMat);
@@ -774,7 +795,7 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   //if (ucTrIdx != DCT2_HEVC)
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    if (pCoeff.width == 8 && pCoeff.height == 16)
+    if ((pCoeff.width == 8 && pCoeff.height == 16) || (pCoeff.width == 16 && pCoeff.height == 16))
     {
       xITrMxN_EMT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
       return;
@@ -788,8 +809,6 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
       pTMat = g_aiKLT4x16[0];
     else if (pCoeff.width == 16 && pCoeff.height == 8)
       pTMat = g_aiKLT16x8[0];
-    else if (pCoeff.width == 16 && pCoeff.height == 16)
-      pTMat = g_aiKLT16x16[0];
     else
       assert(0);
     xIKLTr      ( channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, pTMat);
