@@ -61,6 +61,10 @@ void fastForwardDST7_B4  (const TCoeff *src, TCoeff *dst, Int shift, Int line, I
 void fastInverseDST7_B4  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum);
 
 #if INTRA_KLT_MATRIX
+void fastForwardKLT8x8_R8  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use);
+void fastInverseKLT8x8_R8  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum);
+void fastForwardKLT8x8_L8  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use);
+void fastInverseKLT8x8_L8  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum);
 void fastForwardKLT8x16_R8  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use);
 void fastInverseKLT8x16_R8  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum);
 void fastForwardKLT8x16_L16 (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use);

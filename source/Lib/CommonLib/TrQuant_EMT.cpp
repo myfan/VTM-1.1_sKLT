@@ -1603,6 +1603,27 @@ void fastInverseDST7_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
 }
 
 #if INTRA_KLT_MATRIX
+// 8x8
+void fastForwardKLT8x8_R8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+{
+  _fastForwardMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, g_aiKLT8x8Row[0] );
+}
+
+void fastInverseKLT8x8_R8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+{
+  _fastInverseMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, g_aiKLT8x8Row[0] );
+}
+
+void fastForwardKLT8x8_L8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+{
+  _fastForwardMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, g_aiKLT8x8Col[0] );
+}
+
+void fastInverseKLT8x8_L8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+{
+  _fastInverseMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, g_aiKLT8x8Col[0] );
+}
+
 // 8x16
 void fastForwardKLT8x16_R8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
 {
