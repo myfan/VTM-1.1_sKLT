@@ -257,6 +257,11 @@ void xTrMxN_EMT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
     fastForwardKLT4x16_R4(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
     fastForwardKLT4x16_L16(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
   }
+  else if (iWidth == 16 && iHeight == 4)
+  {
+    fastForwardKLT16x4_R16(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
+    fastForwardKLT16x4_L4(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+  }
   else if (iWidth == 8 && iHeight == 8)
   {
     fastForwardKLT8x8_R8(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
@@ -336,6 +341,11 @@ void xITrMxN_EMT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
   {
     fastInverseKLT4x16_L16(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
     fastInverseKLT4x16_R4(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
+  }
+  else if (iWidth == 16 && iHeight == 4)
+  {
+    fastInverseKLT16x4_L4(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+    fastInverseKLT16x4_R16(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
   }
   else if (iWidth == 8 && iHeight == 8)
   {
@@ -771,7 +781,7 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   //if( ucTrIdx != DCT2_HEVC )
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    if ((iWidth == 4 && iHeight == 16) || (iWidth == 8 && iHeight == 8) || (iWidth == 8 && iHeight == 16) || (iWidth == 16 && iHeight == 16) || (iWidth == 16 && iHeight == 8))
+    if ((iWidth == 4 && iHeight == 16) || (iWidth == 16 && iHeight == 4) || (iWidth == 8 && iHeight == 8) || (iWidth == 8 && iHeight == 16) || (iWidth == 16 && iHeight == 16) || (iWidth == 16 && iHeight == 8))
     {
       xTrMxN_EMT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false, m_rectTUs);
       return;
@@ -779,12 +789,7 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
 
     const PredictionUnit &pu = *(tu.cs->getPU(tu.blocks[compID].pos(), toChannelType(compID)));
     const UInt uiDirMode = PU::getFinalIntraMode(pu, toChannelType(compID));
-    TMatrixCoeff *pTMat;
-    if (iWidth == 16 && iHeight == 4)
-      pTMat = g_aiKLT16x4[0];
-    else
-      assert(0);
-    xKLTr ( channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, pTMat);
+    assert(0);
   }
   else
 #endif
@@ -819,17 +824,12 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   //if (ucTrIdx != DCT2_HEVC)
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    if ((pCoeff.width == 4 && pCoeff.height == 16) || (pCoeff.width == 8 && pCoeff.height == 8) || (pCoeff.width == 8 && pCoeff.height == 16) || (pCoeff.width == 16 && pCoeff.height == 16) || (pCoeff.width == 16 && pCoeff.height == 8))
+    if ((pCoeff.width == 4 && pCoeff.height == 16) || (pCoeff.width == 16 && pCoeff.height == 4) || (pCoeff.width == 8 && pCoeff.height == 8) || (pCoeff.width == 8 && pCoeff.height == 16) || (pCoeff.width == 16 && pCoeff.height == 16) || (pCoeff.width == 16 && pCoeff.height == 8))
     {
       xITrMxN_EMT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
       return;
     }
-    TMatrixCoeff *pTMat;
-    if (pCoeff.width == 16 && pCoeff.height == 4)
-      pTMat = g_aiKLT16x4[0];
-    else
-      assert(0);
-    xIKLTr      ( channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, pTMat);
+    assert(0);
   }
   else
 #endif

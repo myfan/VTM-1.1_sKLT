@@ -142,7 +142,8 @@ extern TMatrixCoeff g_aiTr128 [NUM_TRANS_TYPE][128][128];
 #if INTRA_KLT_MATRIX
 extern TMatrixCoeff g_aiKLT8x8Row[8][8];
 extern TMatrixCoeff g_aiKLT8x8Col[8][8];
-extern TMatrixCoeff g_aiKLT16x4[64][64];
+extern TMatrixCoeff g_aiKLT16x4Row[16][16];
+extern TMatrixCoeff g_aiKLT16x4Col[4][4];
 extern TMatrixCoeff g_aiKLT4x16Row[4][4];
 extern TMatrixCoeff g_aiKLT4x16Col[16][16];
 extern TMatrixCoeff g_aiKLT16x8Row[16][16];
