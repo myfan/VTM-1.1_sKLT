@@ -111,111 +111,7 @@ void TrQuant::copyState( const TrQuant& other )
 #endif
 
 #if INTRA_KLT_MATRIX
-
-/** NxN forward KL-transform (1D) using brute force matrix multiplication
-*  \param block pointer to input data (residual)
-*  \param coeff pointer to output data (transform coefficients)
-*  \param uiTrSize transform size (uiTrSize x uiTrSize)
-*/
-void xKLTr(Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, size_t width, size_t height, const TMatrixCoeff *pTMat)
-{
-  Int i, k, iSum;
-  const int iWidth = (int)width;
-  const int iHeight = (int)height;
-  const UInt uiDim = iWidth * iHeight;
-  UInt uiLog2TrSize = (g_aucLog2[iWidth] + g_aucLog2[iHeight]) >> 1;
-  Int shift = bitDepth + uiLog2TrSize + KLTBASIS_SHIFTBIT - 15; //! to match the shift in quantization
-  Int add = 1 << (shift - 1);
-  //UInt uiTarDepth = g_aucLog2[uiTrSize];
-  ALIGN_DATA(MEMORY_ALIGN_DEF_SIZE, TCoeff block[MAX_TU_SIZE * MAX_TU_SIZE]);
-  for (Int y = 0; y < iHeight; y++)
-  {
-    for (Int x = 0; x < iWidth; x++)
-    {
-      block[(y * iWidth) + x] = residual[(y * stride) + x];
-    }
-  }
-
-  //Short **pTMat = g_ppsEigenVector[uiTarDepth];
-  UInt *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][g_aucLog2[iWidth]][g_aucLog2[iHeight]];
-#if KLT_DEBUG
-  printf("residual block:\n");
-#endif
-  for (i = 0; i< uiDim; i++)
-  {
-    iSum = 0;
-    const Short *pT = pTMat + i * uiDim; //g_psEigenVectorDim16[i];
-    for (k = 0; k<uiDim; k++)
-    {
-      iSum += pT[k] * block[k];
-#if KLT_DEBUG
-      if(i == 0)
-        printf("%4d, ", block[k]);
-#endif
-    }
-    coeff[scan[i]] = (iSum + add) >> shift;
-  }
-#if KLT_DEBUG
-  printf("\n\nKLT coeff before quantization:\n");
-  for (i = 0; i < uiDim; i++)
-  {
-    printf("%4d, ", coeff[i]);
-  }
-#endif
-}
-
-/** NxN inverse KL-transform (1D) using brute force matrix multiplication
-*  \param coeff pointer to input data (transform coefficients)
-*  \param block pointer to output data (residual)
-*  \param uiTrSize transform size (uiTrSize x uiTrSize)
-*/
-void xIKLTr(Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, size_t width, size_t height, const TMatrixCoeff *pTMat)  //void xIKLTr(Short *coeff, Pel *block, UInt uiTrSize) 
-{
-  Int i, k, iSum;
-  const int iWidth = (int)width;
-  const int iHeight = (int)height;
-  UInt uiDim = iWidth * iHeight;
-  //Int shift = 7 + KLTBASIS_SHIFTBIT - (g_bitDepthY - 8);
-  //ComponentID component = COMPONENT_Y;
-  //const Int channelBitDepth = rTu.getCU()->getSlice()->getSPS()->getBitDepth(toChannelType(component));
-  Int shift = 15 + KLTBASIS_SHIFTBIT - bitDepth - ((g_aucLog2[iWidth] + g_aucLog2[iHeight]) >> 1);
-  Int add = 1 << (shift - 1);
-  //UInt uiTarDepth = g_aucLog2[uiTrSize];
-  ALIGN_DATA(MEMORY_ALIGN_DEF_SIZE, TCoeff   tmp[MAX_TU_SIZE * MAX_TU_SIZE]);
-
-  //Short **pTMat = g_ppsEigenVector[uiTarDepth];
-  UInt *scan = g_scanOrder[SCAN_UNGROUPED][SCAN_DIAG][g_aucLog2[iWidth]][g_aucLog2[iHeight]];
-#if KLT_DEBUG
-  printf("\n\nKLT coeff after inverse quantization:\n");
-#endif
-  for (i = 0; i < uiDim; i++)
-  {
-    iSum = 0;
-    for (k = 0; k < uiDim; k++)
-    {
-      iSum += pTMat[k*uiDim + i] * coeff[scan[k]];
-#if KLT_DEBUG
-      if (i == 0)
-        printf("%4d, ", coeff[k]);
-#endif
-    }
-    tmp[i] = (iSum + add) >> shift;
-#if KLT_DEBUG
-    if (i == 0)
-      printf("\n\nreconstructed residual block:\n");
-    printf("%4d, ", tmp[i]);
-#endif
-  }
-  for (Int y = 0; y < iHeight; y++)
-  {
-    for (Int x = 0; x < iWidth; x++)
-    {
-      residual[(y * stride) + x] = Pel(tmp[(y * iWidth) + x]);
-    }
-  }
-}
-
-void xTrMxN_EMT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, Int iWidth, Int iHeight, const int maxLog2TrDynamicRange,
+void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, Int iWidth, Int iHeight, const int maxLog2TrDynamicRange,
   const UChar ucMode, const UChar ucTrIdx, const bool use65intraModes
   , const bool useQTBT
 )
@@ -310,7 +206,7 @@ void xTrMxN_EMT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
 #endif
 }
 
-void xITrMxN_EMT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, Int iWidth, Int iHeight, UInt uiSkipWidth, UInt uiSkipHeight, const Int maxLog2TrDynamicRange, UChar ucMode, UChar ucTrIdx, bool use65intraModes )
+void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, Int iWidth, Int iHeight, UInt uiSkipWidth, UInt uiSkipHeight, const Int maxLog2TrDynamicRange, UChar ucMode, UChar ucTrIdx, bool use65intraModes )
 {
   const Int TRANSFORM_MATRIX_SHIFT = g_transformMatrixShift[TRANSFORM_INVERSE];
   const TCoeff clipMinimum         = -( 1 << maxLog2TrDynamicRange );
@@ -783,7 +679,7 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   {
     if ((iWidth == 4 && iHeight == 16) || (iWidth == 16 && iHeight == 4) || (iWidth == 8 && iHeight == 8) || (iWidth == 8 && iHeight == 16) || (iWidth == 16 && iHeight == 16) || (iWidth == 16 && iHeight == 8))
     {
-      xTrMxN_EMT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false, m_rectTUs);
+      xTrMxN_KLT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false, m_rectTUs);
       return;
     }
 
@@ -826,7 +722,7 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   {
     if ((pCoeff.width == 4 && pCoeff.height == 16) || (pCoeff.width == 16 && pCoeff.height == 4) || (pCoeff.width == 8 && pCoeff.height == 8) || (pCoeff.width == 8 && pCoeff.height == 16) || (pCoeff.width == 16 && pCoeff.height == 16) || (pCoeff.width == 16 && pCoeff.height == 8))
     {
-      xITrMxN_EMT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
+      xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
       return;
     }
     assert(0);
