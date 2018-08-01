@@ -160,6 +160,10 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
   {
     fastForwardKLT_B16(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
   }
+  else if (iWidth == 32)
+  {
+    fastForwardKLT_B32(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
+  }
   else
   {
     assert(0);
@@ -176,6 +180,10 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
   else if (iHeight == 16)
   {
     fastForwardKLT_B16(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+  }
+  else if (iHeight == 32)
+  {
+    fastForwardKLT_B32(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
   }
   else
   {
@@ -244,6 +252,10 @@ void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
   {
     fastInverseKLT_B16(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
   }
+  else if (iHeight == 32)
+  {
+    fastInverseKLT_B32(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+  }
   else
   {
     assert(0);
@@ -260,6 +272,10 @@ void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
   else if (iWidth == 16)
   {
     fastInverseKLT_B16(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
+  }
+  else if (iWidth == 32)
+  {
+    fastInverseKLT_B32(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
   }
   else
   {

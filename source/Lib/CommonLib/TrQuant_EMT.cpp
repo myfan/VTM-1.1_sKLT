@@ -1636,14 +1636,15 @@ void fastInverseKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
   _fastInverseMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, g_aiKLT16[0] );
 }
 
+// 32x32
 void fastForwardKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
 {
-  _fastForwardMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, g_aiTr32[DST7][0] );
+  _fastForwardMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, g_aiKLT32[0]);
 }
 
 void fastInverseKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
 {
-  _fastInverseMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, g_aiTr32[DST7][0] );
+  _fastInverseMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, g_aiKLT32[0]);
 }
 
 
