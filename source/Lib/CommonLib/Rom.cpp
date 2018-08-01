@@ -474,7 +474,15 @@ TMatrixCoeff g_aiTr64 [NUM_TRANS_TYPE][ 64][ 64];
 TMatrixCoeff g_aiTr128[NUM_TRANS_TYPE][128][128];
 
 #if INTRA_KLT_MATRIX
-extern TMatrixCoeff g_aiKLT8x8Row[8][8]=
+extern TMatrixCoeff g_aiKLT4[4][4]=
+{
+{  42,  62,  73,  74,},
+{  76,  66, -21, -77,},
+{ -80,  45,  67, -59,},
+{  50, -79,  78, -40,},
+};
+
+extern TMatrixCoeff g_aiKLT8[8][8]=
 {
 {  26,  42,  55,  66,  74,  78,  78,  72,},
 {  55,  82,  83,  58,  12, -37, -72, -78,},
@@ -486,15 +494,7 @@ extern TMatrixCoeff g_aiKLT8x8Row[8][8]=
 { -29,  56, -76,  85, -85,  73, -53,  23,},
 };
 
-extern TMatrixCoeff g_aiKLT4x16Row[4][4]=
-{
-{  42,  62,  73,  74,},
-{  76,  66, -21, -77,},
-{ -80,  45,  67, -59,},
-{  50, -79,  78, -40,},
-};
-
-extern TMatrixCoeff g_aiKLT16x16Row[16][16] =
+extern TMatrixCoeff g_aiKLT16[16][16] =
 {
 {  17,  25,  32,  40,  48,  54,  60,  66,  72,  76,  79,  81,  82,  81,  78,  73,},
 { -47, -64, -76, -85, -86, -82, -71, -53, -31,  -7,  18,  40,  60,  74,  80,  77,},
