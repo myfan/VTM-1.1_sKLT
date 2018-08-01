@@ -675,11 +675,8 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   //if( ucTrIdx != DCT2_HEVC )
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    if ((iWidth == 4 && iHeight == 16) || (iWidth == 16 && iHeight == 4) || (iWidth == 8 && iHeight == 8) || (iWidth == 8 && iHeight == 16) || (iWidth == 16 && iHeight == 16) || (iWidth == 16 && iHeight == 8))
-    {
-      xTrMxN_KLT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false, m_rectTUs);
-      return;
-    }
+    xTrMxN_KLT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false, m_rectTUs);
+    return;
 
     const PredictionUnit &pu = *(tu.cs->getPU(tu.blocks[compID].pos(), toChannelType(compID)));
     const UInt uiDirMode = PU::getFinalIntraMode(pu, toChannelType(compID));
@@ -718,11 +715,9 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   //if (ucTrIdx != DCT2_HEVC)
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    if ((pCoeff.width == 4 && pCoeff.height == 16) || (pCoeff.width == 16 && pCoeff.height == 4) || (pCoeff.width == 8 && pCoeff.height == 8) || (pCoeff.width == 8 && pCoeff.height == 16) || (pCoeff.width == 16 && pCoeff.height == 16) || (pCoeff.width == 16 && pCoeff.height == 8))
-    {
-      xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
-      return;
-    }
+    xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
+    return;
+
     assert(0);
   }
   else
