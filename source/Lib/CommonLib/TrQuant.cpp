@@ -151,32 +151,32 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
   if (iWidth == 4 && iHeight == 16)
   {
     fastForwardKLT4x16_R4(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
-    fastForwardKLT16x16_L16(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+    fastForwardKLT16x16_R16(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
   }
   else if (iWidth == 16 && iHeight == 4)
   {
     fastForwardKLT16x16_R16(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
-    fastForwardKLT16x4_L4(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+    fastForwardKLT4x16_R4(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
   }
   else if (iWidth == 8 && iHeight == 8)
   {
     fastForwardKLT8x8_R8(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
-    fastForwardKLT8x8_L8(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+    fastForwardKLT8x8_R8(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
   }
   else if (iWidth == 8 && iHeight == 16)
   {
     fastForwardKLT8x8_R8(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
-    fastForwardKLT16x16_L16(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+    fastForwardKLT16x16_R16(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
   }
   else if (iWidth == 16 && iHeight == 8)
   {
     fastForwardKLT16x16_R16(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
-    fastForwardKLT8x8_L8(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+    fastForwardKLT8x8_R8(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
   }
   else if (iWidth == 16 && iHeight == 16)
   {
     fastForwardKLT16x16_R16(block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
-    fastForwardKLT16x16_L16(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+    fastForwardKLT16x16_R16(tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
   }
   else
   {
@@ -235,32 +235,32 @@ void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
 #endif
   if (iWidth == 4 && iHeight == 16)
   {
-    fastInverseKLT16x16_L16(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+    fastInverseKLT16x16_R16(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
     fastInverseKLT4x16_R4(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
   }
   else if (iWidth == 16 && iHeight == 4)
   {
-    fastInverseKLT16x4_L4(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+    fastInverseKLT4x16_R4(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
     fastInverseKLT16x16_R16(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
   }
   else if (iWidth == 8 && iHeight == 8)
   {
-    fastInverseKLT8x8_L8(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+    fastInverseKLT8x8_R8(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
     fastInverseKLT8x8_R8(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
   }
   else if (iWidth == 8 && iHeight == 16)
   {
-    fastInverseKLT16x16_L16(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+    fastInverseKLT16x16_R16(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
     fastInverseKLT8x8_R8(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
   }
   else if (iWidth == 16 && iHeight == 8)
   {
-    fastInverseKLT8x8_L8(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+    fastInverseKLT8x8_R8(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
     fastInverseKLT16x16_R16(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
   }
   else  if (iWidth == 16 && iHeight == 16)
   {
-    fastInverseKLT16x16_L16(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+    fastInverseKLT16x16_R16(coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
     fastInverseKLT16x16_R16(tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
   }
   else
