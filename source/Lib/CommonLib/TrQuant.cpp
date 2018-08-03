@@ -140,6 +140,7 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
 
   CHECK(shift_1st < 0, "Negative shift");
   CHECK(shift_2nd < 0, "Negative shift");
+  CHECK(ucTrIdx < 0 && ucTrIdx > 3, "Incorrect transform index");
 
   ALIGN_DATA(MEMORY_ALIGN_DEF_SIZE, TCoeff block[MAX_TU_SIZE * MAX_TU_SIZE]);
 
@@ -161,8 +162,8 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
   }
 
   TCoeff *tmp = (TCoeff *)alloca(iWidth * iHeight * sizeof(TCoeff));
-  fastFwdTrans[1][transformWidthIndex](block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
-  fastFwdTrans[1][transformHeightIndex](tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+  fastFwdTrans[ucTrIdx & 1][transformWidthIndex](block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
+  fastFwdTrans[ucTrIdx >> 1][transformHeightIndex](tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
 
 #if SEPARATE_KLT_DEBUG
   printf("\nCoefficient block after Row (1st) KLT:\n");
@@ -200,6 +201,7 @@ void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
 
   CHECK( shift_1st < 0, "Negative shift" );
   CHECK( shift_2nd < 0, "Negative shift" );
+  CHECK(ucTrIdx < 0 && ucTrIdx > 3, "Incorrect transform index");
 
   TCoeff *tmp   = ( TCoeff * ) alloca( iWidth * iHeight * sizeof( TCoeff ) );
   TCoeff *block = ( TCoeff * ) alloca( iWidth * iHeight * sizeof( TCoeff ) );
@@ -215,8 +217,8 @@ void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
     printf("\n");
   }
 #endif
-  fastInvTrans[1][transformHeightIndex](coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
-  fastInvTrans[1][transformWidthIndex](tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
+  fastInvTrans[ucTrIdx >> 1][transformHeightIndex](coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+  fastInvTrans[ucTrIdx & 1][transformWidthIndex](tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
 
 #if SEPARATE_KLT_DEBUG
   printf("\nCoefficient block after inverse Column (1st) KLT :\n");
@@ -622,13 +624,12 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
 #endif
 #if INTRA_KLT_MATRIX
   //const unsigned ucMode = getEmtMode(tu, compID);
-  //const unsigned ucTrIdx = getEmtTrIdx(tu, compID);
+  const unsigned ucTrIdx = getKltTrIdx(tu, compID);
   const unsigned ucMode = 0;
-  const unsigned ucTrIdx = tu.cu->kltFlag;
   //if( ucTrIdx != DCT2_HEVC )
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    xTrMxN_KLT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false, m_rectTUs);
+    xTrMxN_KLT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx + 1, false, m_rectTUs);
     return;
 
     const PredictionUnit &pu = *(tu.cs->getPU(tu.blocks[compID].pos(), toChannelType(compID)));
@@ -638,6 +639,9 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   else
 #endif
   {
+#if INTRA_KLT_MATRIX & 0
+    CHECK(ucTrIdx != 0, "Incorrect transform index setting");
+#endif
 #if HEVC_USE_4x4_DSTVII
     m_fTr     ( channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, useDST, maxLog2TrDynamicRange );
 #else
@@ -658,17 +662,15 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
 
 #if INTRA_KLT_MATRIX
   //const unsigned ucMode = getEmtMode(tu, compID);
-  //const unsigned ucTrIdx = getEmtTrIdx(tu, compID);
-
+  const unsigned ucTrIdx = getKltTrIdx(tu, compID);
   const unsigned ucMode = 0;
-  const unsigned ucTrIdx = 0;
 
   Int iSkipWidth = 0, iSkipHeight = 0;
 
   //if (ucTrIdx != DCT2_HEVC)
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
+    xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx + 1, false);
     return;
 
     assert(0);
@@ -676,6 +678,9 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   else
 #endif
   {
+#if INTRA_KLT_MATRIX & 0
+    CHECK(ucTrIdx != 0, "Incorrect transform index setting");
+#endif
 #if HEVC_USE_4x4_DSTVII
     m_fITr     ( channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height,                          useDST, maxLog2TrDynamicRange );
 #else
@@ -745,6 +750,37 @@ Void TrQuant::xQuant(TransformUnit &tu, const ComponentID &compID, const CCoeffB
   m_quant->quant( tu, compID, pSrc, uiAbsSum, cQP, ctx );
 }
 
+#if INTRA_KLT_MATRIX
+UChar TrQuant::getKltTrIdx(TransformUnit tu, const ComponentID compID)
+{
+  UChar ucTrIdx = DCT2_HEVC;
+
+  if( compID == COMPONENT_Y )
+  {
+    if( CU::isIntra( *tu.cu ) && tu.cs->sps->getSpsNext().getUseIntraKLT() )
+    {
+      ucTrIdx = tu.cu->kltFlag ? tu.kltIdx : DCT2_EMT;
+    }
+    if( !CU::isIntra( *tu.cu ) && tu.cs->sps->getSpsNext().getUseIntraKLT() )
+    {
+      ucTrIdx = tu.cu->kltFlag ? tu.kltIdx : DCT2_EMT;
+    }
+  }
+  else
+  {
+    if( CU::isIntra( *tu.cu ) && tu.cs->sps->getSpsNext().getUseInterKLT() )
+    {
+      ucTrIdx = DCT2_EMT;
+    }
+    if( !CU::isIntra( *tu.cu ) && tu.cs->sps->getSpsNext().getUseInterKLT() )
+    {
+      ucTrIdx = DCT2_EMT;
+    }
+  }
+
+  return ucTrIdx;
+}
+#endif
 
 Void TrQuant::transformNxN(TransformUnit &tu, const ComponentID &compID, const QpParam &cQP, TCoeff &uiAbsSum, const Ctx &ctx)
 {

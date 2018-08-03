@@ -140,6 +140,7 @@ public:
   void        transform_skip_flag       ( const TransformUnit&          tu,       ComponentID       compID );
 #if INTRA_KLT_MATRIX
   void        klt_cu_flag               ( const CodingUnit&             cu );
+  void        klt_tu_index              ( const TransformUnit&          tu );
 #endif
   void        explicit_rdpcm_mode       ( const TransformUnit&          tu,       ComponentID       compID );
   void        last_sig_coeff            ( CoeffCodingContext&           cctx );

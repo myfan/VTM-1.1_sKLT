@@ -1777,6 +1777,11 @@ void CABACReader::residual_coding( TransformUnit& tu, ComponentID compID )
   // parse subblocks
   cctx.setGoRiceStats( GRStats );
 
+#if INTRA_KLT_MATRIX
+  const CodingUnit& cu = *tu.cu;
+  bool useEmt = ( cu.cs->sps->getSpsNext().getUseIntraKLT() && cu.predMode == MODE_INTRA ) || ( cu.cs->sps->getSpsNext().getUseInterKLT() && cu.predMode != MODE_INTRA );
+  useEmt = useEmt && isLuma(compID);
+#endif
 
     for( int subSetId = ( cctx.scanPosLast() >> cctx.log2CGSize() ); subSetId >= 0; subSetId--)
     {
@@ -1784,6 +1789,12 @@ void CABACReader::residual_coding( TransformUnit& tu, ComponentID compID )
       residual_coding_subblock( cctx, coeff );
     }
   GRStats = cctx.currGoRiceStats();
+#if INTRA_KLT_MATRIX
+  if (useEmt)
+  {
+    klt_tu_index(tu);
+  }
+#endif
 }
 
 
@@ -2264,6 +2275,49 @@ Void CABACReader::klt_cu_flag(CodingUnit& cu)
     bool uiCuFlag = m_BinDecoder.decodeBin(Ctx::KLTCuFlag(depth));
     cu.kltFlag = uiCuFlag;
     DTRACE(g_trace_ctx, D_SYNTAX, "emt_cu_flag() etype=%d pos=(%d,%d) emtCuFlag=%d\n", COMPONENT_Y, cu.lx(), cu.ly(), (int)cu.emtFlag);
+  }
+}
+
+Void CABACReader::klt_tu_index( TransformUnit& tu )
+{
+  int maxSizeEmtIntra, maxSizeEmtInter;
+  if( tu.cs->pcv->noRQT )
+  {
+    maxSizeEmtIntra = EMT_INTRA_MAX_CU_WITH_QTBT;
+    maxSizeEmtInter = EMT_INTER_MAX_CU_WITH_QTBT;
+  }
+  else
+  {
+    maxSizeEmtIntra = EMT_INTRA_MAX_CU;
+    maxSizeEmtInter = EMT_INTER_MAX_CU;
+  }
+
+  UChar trIdx = 0;
+  RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET_SIZE2( STATS__CABAC_BITS__KLT_TU_INDEX, tu.cu->lumaSize(), CHANNEL_TYPE_LUMA );
+
+  if( CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeEmtIntra ) && ( tu.cu->Y().height <= maxSizeEmtIntra ) )
+  {
+    bool uiSymbol1 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 0 ) );
+    bool uiSymbol2 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 1 ) );
+
+    trIdx = ( uiSymbol2 << 1 ) | ( int ) uiSymbol1;
+
+    DTRACE( g_trace_ctx, D_SYNTAX, "emt_tu_index() etype=%d pos=(%d,%d) emtTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int ) trIdx );
+  }
+  if( !CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeEmtInter ) && ( tu.cu->Y().height <= maxSizeEmtInter ) )
+  {
+    bool uiSymbol1 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 2 ) );
+    bool uiSymbol2 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 3 ) );
+
+    trIdx = ( uiSymbol2 << 1 ) | ( int ) uiSymbol1;
+
+    DTRACE( g_trace_ctx, D_SYNTAX, "emt_tu_index() etype=%d pos=(%d,%d) emtTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int ) trIdx );
+  }
+
+  tu.kltIdx = trIdx;
+  if (trIdx != 0)
+  {
+    (*tu.cu).kltFlag = 1;
   }
 }
 #endif

@@ -607,6 +607,13 @@ const CtxSet ContextSetCfg::KLTCuFlag = ContextSetCfg::addCtxSet
   {  CNU, CNU, CNU, CNU, CNU, CNU,},
   {  CNU, CNU, CNU, CNU, CNU, CNU,},
 });
+
+const CtxSet ContextSetCfg::KLTTuIndex = ContextSetCfg::addCtxSet
+({
+  {  CNU, CNU, CNU, CNU,},
+  {  CNU, CNU, CNU, CNU,},
+  {  CNU, CNU, CNU, CNU,},
+});
 #endif
 
 const CtxSet ContextSetCfg::CrossCompPred = ContextSetCfg::addCtxSet

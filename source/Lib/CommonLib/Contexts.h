@@ -192,6 +192,7 @@ public:
   static const CtxSet   RdpcmDir;
 #if INTRA_KLT_MATRIX
   static const CtxSet   KLTCuFlag;
+  static const CtxSet   KLTTuIndex;
 #endif
   static const CtxSet   CrossCompPred;
   static const CtxSet   ChromaQpAdjFlag;

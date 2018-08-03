@@ -1449,7 +1449,11 @@ Void IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
   UInt64     singleFracBits                     = 0;
   Bool       checkTransformSkip                 = pps.getUseTransformSkip();
   Int        bestModeId[MAX_NUM_COMPONENT]      = {0, 0, 0};
+#if INTRA_KLT_MATRIX
+  UChar      nNumTransformCands                 = cu.kltFlag ? 3 : 1; //4 is the number of transforms of klt
+#else
   UChar      nNumTransformCands                 = 1;
+#endif
 
 #if ENABLE_RQT_INTRA_SPEEDUP
   UChar      numTransformIndexCands             = checkInitTrDepth ? 1 : nNumTransformCands;
@@ -1554,7 +1558,9 @@ Void IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
         }
       }
 
-
+#if INTRA_KLT_MATRIX
+      UChar transformIndex = modeId;
+#endif
 
 
       if ((modeId != firstCheckId) && isNotOnlyOneMode)
@@ -1573,6 +1579,10 @@ Void IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
       {
         default0Save1Load2 = 2;
       }
+
+#if INTRA_KLT_MATRIX
+      tu.kltIdx = transformIndex;
+#endif
 
       if( !checkTransformSkip )
       {

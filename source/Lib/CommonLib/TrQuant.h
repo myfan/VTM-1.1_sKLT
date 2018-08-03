@@ -79,6 +79,9 @@ public:
                     const bool rectTUs              = false
   );
 
+#if INTRA_KLT_MATRIX
+  UChar getKltTrIdx( TransformUnit tu, const ComponentID compID );
+#endif
 
 protected:
 

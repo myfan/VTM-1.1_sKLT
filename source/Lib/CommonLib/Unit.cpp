@@ -444,6 +444,9 @@ Void TransformUnit::initData()
 #if HEVC_USE_RQT || ENABLE_BMS
   depth              = 0;
 #endif
+#if INTRA_KLT_MATRIX
+  kltIdx             = 0;
+#endif
 
 }
 
@@ -480,6 +483,9 @@ TransformUnit& TransformUnit::operator=(const TransformUnit& other)
 #if HEVC_USE_RQT || ENABLE_BMS
   depth              = other.depth;
 #endif
+#if INTRA_KLT_MATRIX
+  kltIdx             = other.kltIdx;
+#endif
   return *this;
 }
 
@@ -505,6 +511,9 @@ Void TransformUnit::copyComponentFrom(const TransformUnit& other, const Componen
 #endif
   if( isLuma( i ) )
   {
+#if INTRA_KLT_MATRIX
+    kltIdx         = other.kltIdx;
+#endif
   }
 }
 

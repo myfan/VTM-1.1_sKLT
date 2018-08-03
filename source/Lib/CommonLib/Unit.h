@@ -401,6 +401,9 @@ struct TransformUnit : public UnitArea
 #if HEVC_USE_RQT || ENABLE_BMS
   UChar        depth;
 #endif
+#if INTRA_KLT_MATRIX
+  UChar        kltIdx;
+#endif
   UChar        cbf          [ MAX_NUM_TBLOCKS ];
   RDPCMMode    rdpcm        [ MAX_NUM_TBLOCKS ];
   Bool         transformSkip[ MAX_NUM_TBLOCKS ];
