@@ -140,7 +140,7 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
 
   CHECK(shift_1st < 0, "Negative shift");
   CHECK(shift_2nd < 0, "Negative shift");
-  CHECK(ucTrIdx < 0 && ucTrIdx > 3, "Incorrect transform index");
+  CHECK(ucTrIdx < 1 && ucTrIdx > 3, "Incorrect transform index");
 
   ALIGN_DATA(MEMORY_ALIGN_DEF_SIZE, TCoeff block[MAX_TU_SIZE * MAX_TU_SIZE]);
 
@@ -201,7 +201,7 @@ void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
 
   CHECK( shift_1st < 0, "Negative shift" );
   CHECK( shift_2nd < 0, "Negative shift" );
-  CHECK(ucTrIdx < 0 && ucTrIdx > 3, "Incorrect transform index");
+  CHECK(ucTrIdx < 1 && ucTrIdx > 3, "Incorrect transform index");
 
   TCoeff *tmp   = ( TCoeff * ) alloca( iWidth * iHeight * sizeof( TCoeff ) );
   TCoeff *block = ( TCoeff * ) alloca( iWidth * iHeight * sizeof( TCoeff ) );
@@ -629,7 +629,7 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   //if( ucTrIdx != DCT2_HEVC )
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    xTrMxN_KLT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx + 1, false, m_rectTUs);
+    xTrMxN_KLT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false, m_rectTUs);
     return;
 
     const PredictionUnit &pu = *(tu.cs->getPU(tu.blocks[compID].pos(), toChannelType(compID)));
@@ -670,7 +670,7 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   //if (ucTrIdx != DCT2_HEVC)
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx + 1, false);
+    xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
     return;
 
     assert(0);
