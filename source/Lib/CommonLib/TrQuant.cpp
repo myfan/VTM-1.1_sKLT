@@ -162,8 +162,8 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
   }
 
   TCoeff *tmp = (TCoeff *)alloca(iWidth * iHeight * sizeof(TCoeff));
-  fastFwdTrans[ucTrIdx & 1][transformWidthIndex](block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
-  fastFwdTrans[ucTrIdx >> 1][transformHeightIndex](tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+  fastFwdTrans[ucTrIdx & 1][transformWidthIndex](block, tmp, shift_1st, iHeight, 0, iSkipWidth, 0);
+  fastFwdTrans[ucTrIdx >> 1][transformHeightIndex](tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 0);
 
 #if SEPARATE_KLT_DEBUG
   printf("\nCoefficient block after Row (1st) KLT:\n");
@@ -217,8 +217,8 @@ void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
     printf("\n");
   }
 #endif
-  fastInvTrans[ucTrIdx >> 1][transformHeightIndex](coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
-  fastInvTrans[ucTrIdx & 1][transformWidthIndex](tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
+  fastInvTrans[ucTrIdx >> 1][transformHeightIndex](coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum);
+  fastInvTrans[ucTrIdx & 1][transformWidthIndex](tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 0, clipMinimum, clipMaximum);
 
 #if SEPARATE_KLT_DEBUG
   printf("\nCoefficient block after inverse Column (1st) KLT :\n");

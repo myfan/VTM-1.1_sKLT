@@ -1031,7 +1031,7 @@ Void QuantRDOQ::xRateDistOptQuant(TransformUnit &tu, const ComponentID &compID, 
     piDstCoeff[ cctx.blockPos( scanPos ) ] = 0;
   }
 #if SEPARATE_KLT_DEBUG
-  if (uiWidth == 8 && uiHeight == 16)
+  if (tu.kltIdx != 0)
   {
     printf("\nCoefficient block after quantization :\n");
     for (Int y = 0; y < uiHeight; y++)
