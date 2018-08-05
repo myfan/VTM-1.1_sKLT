@@ -1854,7 +1854,15 @@ void CABACWriter::residual_coding( const TransformUnit& tu, ComponentID compID )
 #if INTRA_KLT_MATRIX
   if (useEmt)
   {
-    klt_tu_index(tu);
+    if (!tu.transformSkip[compID])
+    {
+      klt_tu_index(tu);
+    }
+    else
+    {
+      CHECK(tu.kltIdx != 0, "Error KLT Index");
+      CHECK((*tu.cu).kltFlag != 0, "Error KLT Flag");
+    }
   }
 #endif
 }

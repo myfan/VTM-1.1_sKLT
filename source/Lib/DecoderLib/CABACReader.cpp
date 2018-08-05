@@ -1792,7 +1792,15 @@ void CABACReader::residual_coding( TransformUnit& tu, ComponentID compID )
 #if INTRA_KLT_MATRIX
   if (useEmt)
   {
-    klt_tu_index(tu);
+    if (!tu.transformSkip[compID])
+    {
+      klt_tu_index(tu);
+    }
+    else
+    {
+      tu.kltIdx = 0;
+      (*tu.cu).kltFlag = 0;
+    }
   }
 #endif
 }
