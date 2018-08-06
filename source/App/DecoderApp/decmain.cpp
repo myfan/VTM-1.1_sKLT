@@ -117,6 +117,16 @@ int main(int argc, char* argv[])
   dResult = (Double)(clock()-lBefore) / CLOCKS_PER_SEC;
   printf("\n Total Time: %12.3f sec.\n", dResult);
 
+
+#if STAT_KLT_IDX
+  extern int kltIdxHist[4];
+  printf("\nKLT Index Statistics (tu number):\n");
+  for (int i = 0; i < 4; i++)
+  {
+    printf("  klt Idx %d : %d\n", i, kltIdxHist[i]);
+  }
+#endif
+
   delete pcDecApp;
 
   return returnCode;

@@ -62,6 +62,9 @@
 #define RExt__DECODER_DEBUG_BIT_STATISTICS_SET(x)
 #endif
 
+#if STAT_KLT_IDX
+int kltIdxHist[4];
+#endif
 
 void CABACReader::initCtxModels( Slice& slice )
 {
@@ -2321,6 +2324,10 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
 
     DTRACE( g_trace_ctx, D_SYNTAX, "emt_tu_index() etype=%d pos=(%d,%d) emtTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int ) trIdx );
   }
+
+#if STAT_KLT_IDX
+  kltIdxHist[trIdx]++;
+#endif
 
   tu.kltIdx = trIdx;
   if (trIdx != 0)
