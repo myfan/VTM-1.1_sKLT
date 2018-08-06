@@ -2309,9 +2309,30 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
   if( CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeEmtIntra ) && ( tu.cu->Y().height <= maxSizeEmtIntra ) )
   {
     bool uiSymbol1 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 0 ) );
-    bool uiSymbol2 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 1 ) );
-
-    trIdx = ( uiSymbol2 << 1 ) | ( int ) uiSymbol1;
+    if (uiSymbol1)
+    {
+      trIdx = 3;
+    }
+    else
+    {
+      bool uiSymbol2 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(1));
+      if (uiSymbol2)
+      {
+        trIdx = 1;
+      }
+      else
+      {
+        bool uiSymbol3 = m_BinDecoder.decodeBinEP();
+        if (uiSymbol3)
+        {
+          trIdx = 2;
+        }
+        else
+        {
+          trIdx = 0;
+        }
+      }
+    }
 
     DTRACE( g_trace_ctx, D_SYNTAX, "emt_tu_index() etype=%d pos=(%d,%d) emtTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int ) trIdx );
   }

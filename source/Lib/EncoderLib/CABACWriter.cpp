@@ -2336,8 +2336,23 @@ Void CABACWriter::klt_tu_index( const TransformUnit& tu )
   if( CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeEmtIntra ) && ( tu.cu->Y().height <= maxSizeEmtIntra ) )
   {
     UChar trIdx = tu.kltIdx; //! 0: kltFlag = 0, 1~3: kltFlag = 1, klt index
-    m_BinEncoder.encodeBin( ( trIdx & 1 ) ? 1 : 0, Ctx::KLTTuIndex( 0 ) );
-    m_BinEncoder.encodeBin( ( trIdx / 2 ) ? 1 : 0, Ctx::KLTTuIndex( 1 ) );
+    if (trIdx == 3)
+    {
+      m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(0));
+    }
+    else
+    {
+      m_BinEncoder.encodeBin(0, Ctx::KLTTuIndex(0));
+      if (trIdx == 1)
+      {
+        m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(1));
+      }
+      else
+      {
+        m_BinEncoder.encodeBin(0, Ctx::KLTTuIndex(1));
+        m_BinEncoder.encodeBinEP((trIdx == 2));
+      }
+    }
     DTRACE( g_trace_ctx, D_SYNTAX, "emt_tu_index() etype=%d pos=(%d,%d) emtTrIdx=%d\n", COMPONENT_Y, tu.blocks[COMPONENT_Y].x, tu.blocks[COMPONENT_Y].y, ( int ) tu.emtIdx );
   }
   if( !CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeEmtInter ) && ( tu.cu->Y().height <= maxSizeEmtInter ) )
