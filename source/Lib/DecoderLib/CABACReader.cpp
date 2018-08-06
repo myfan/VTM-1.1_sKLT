@@ -2322,7 +2322,7 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
       }
       else
       {
-        bool uiSymbol3 = m_BinDecoder.decodeBinEP();
+        bool uiSymbol3 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(2));
         if (uiSymbol3)
         {
           trIdx = 2;
@@ -2338,8 +2338,8 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
   }
   if( !CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeEmtInter ) && ( tu.cu->Y().height <= maxSizeEmtInter ) )
   {
-    bool uiSymbol1 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 2 ) );
-    bool uiSymbol2 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 3 ) );
+    bool uiSymbol1 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 3 ) );
+    bool uiSymbol2 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 4 ) );
 
     trIdx = ( uiSymbol2 << 1 ) | ( int ) uiSymbol1;
 

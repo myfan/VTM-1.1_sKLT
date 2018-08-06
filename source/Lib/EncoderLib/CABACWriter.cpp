@@ -2350,7 +2350,7 @@ Void CABACWriter::klt_tu_index( const TransformUnit& tu )
       else
       {
         m_BinEncoder.encodeBin(0, Ctx::KLTTuIndex(1));
-        m_BinEncoder.encodeBinEP((trIdx == 2));
+        m_BinEncoder.encodeBin((trIdx == 2), Ctx::KLTTuIndex(2));
       }
     }
     DTRACE( g_trace_ctx, D_SYNTAX, "emt_tu_index() etype=%d pos=(%d,%d) emtTrIdx=%d\n", COMPONENT_Y, tu.blocks[COMPONENT_Y].x, tu.blocks[COMPONENT_Y].y, ( int ) tu.emtIdx );
