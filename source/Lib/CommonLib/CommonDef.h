@@ -339,10 +339,6 @@ static const unsigned C806_ALF_TEMPPRED_NUM =                      6;
 static const Int NTAPS_LUMA               =                         8; ///< Number of taps for luma
 static const Int NTAPS_CHROMA             =                         4; ///< Number of taps for chroma
 
-#if INTRA_KLT_MATRIX
-static const Int COM16_C806_TRANS_PREC_KLT =                        0;
-const Int KLTBASIS_SHIFTBIT            =                           10; ///< KLT scale factor is BLOCK_SIZE*(1<<KLTBASIS_SHIFTBIT); (log2(width)+KLTBASIS_SHIFTBIT <= 15); If 6, then the first base vector is {64,...,64}. We use 10.
-#endif
 // ====================================================================================================================
 // Macro functions
 // ====================================================================================================================

@@ -130,8 +130,8 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
 )
 {
   const Int TRANSFORM_MATRIX_SHIFT = g_transformMatrixShift[TRANSFORM_FORWARD];
-  const Int shift_1st = ((g_aucLog2[iWidth]) + bitDepth + TRANSFORM_MATRIX_SHIFT) - maxLog2TrDynamicRange + COM16_C806_TRANS_PREC_KLT;
-  const Int shift_2nd = (g_aucLog2[iHeight]) + TRANSFORM_MATRIX_SHIFT + COM16_C806_TRANS_PREC_KLT;
+  const Int shift_1st = ((g_aucLog2[iWidth]) + bitDepth + TRANSFORM_MATRIX_SHIFT) - maxLog2TrDynamicRange + COM16_C806_TRANS_PREC;
+  const Int shift_2nd = (g_aucLog2[iHeight]) + TRANSFORM_MATRIX_SHIFT + COM16_C806_TRANS_PREC;
   const UInt transformWidthIndex = g_aucLog2[iWidth] - 1;  //nLog2WidthMinus1, since transform start from 2-point
   const UInt transformHeightIndex = g_aucLog2[iHeight] - 1;  //nLog2HeightMinus1, since transform start from 2-point
   const Int iZeroOutThresh = JVET_C0024_ZERO_OUT_TH;
@@ -162,8 +162,8 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
   }
 
   TCoeff *tmp = (TCoeff *)alloca(iWidth * iHeight * sizeof(TCoeff));
-  fastFwdTrans[ucTrIdx & 1][transformWidthIndex](block, tmp, shift_1st, iHeight, 0, iSkipWidth, 0);
-  fastFwdTrans[ucTrIdx >> 1][transformHeightIndex](tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 0);
+  fastFwdTrans[ucTrIdx & 1][transformWidthIndex](block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
+  fastFwdTrans[ucTrIdx >> 1][transformHeightIndex](tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
 
 #if SEPARATE_KLT_DEBUG
   printf("\nCoefficient block after Row (1st) KLT:\n");
@@ -194,8 +194,8 @@ void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
   const Int TRANSFORM_MATRIX_SHIFT = g_transformMatrixShift[TRANSFORM_INVERSE];
   const TCoeff clipMinimum         = -( 1 << maxLog2TrDynamicRange );
   const TCoeff clipMaximum         =  ( 1 << maxLog2TrDynamicRange ) - 1;
-  const Int shift_1st              =   TRANSFORM_MATRIX_SHIFT + 1 + COM16_C806_TRANS_PREC_KLT; //1 has been added to shift_1st at the expense of shift_2nd
-  const Int shift_2nd              = ( TRANSFORM_MATRIX_SHIFT + maxLog2TrDynamicRange - 1 ) - bitDepth + COM16_C806_TRANS_PREC_KLT;
+  const Int shift_1st              =   TRANSFORM_MATRIX_SHIFT + 1 + COM16_C806_TRANS_PREC; //1 has been added to shift_1st at the expense of shift_2nd
+  const Int shift_2nd              = ( TRANSFORM_MATRIX_SHIFT + maxLog2TrDynamicRange - 1 ) - bitDepth + COM16_C806_TRANS_PREC;
   const UInt transformWidthIndex  = g_aucLog2[iWidth ] - 1;  //nLog2WidthMinus1, since transform start from 2-point
   const UInt transformHeightIndex = g_aucLog2[iHeight] - 1;  //nLog2HeightMinus1, since transform start from 2-point
 
@@ -217,8 +217,8 @@ void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
     printf("\n");
   }
 #endif
-  fastInvTrans[ucTrIdx >> 1][transformHeightIndex](coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum);
-  fastInvTrans[ucTrIdx & 1][transformWidthIndex](tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 0, clipMinimum, clipMaximum);
+  fastInvTrans[ucTrIdx >> 1][transformHeightIndex](coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
+  fastInvTrans[ucTrIdx & 1][transformWidthIndex](tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
 
 #if SEPARATE_KLT_DEBUG
   printf("\nCoefficient block after inverse Column (1st) KLT :\n");
