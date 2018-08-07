@@ -2307,11 +2307,12 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
 
   SizeType lumaWidth = tu.cu->Y().width;
   SizeType lumaHeight = tu.cu->Y().height;
+  unsigned depth = (*tu.cu).qtDepth;
   if( CU::isIntra( *tu.cu ) && (lumaWidth <= maxSizeEmtIntra ) && (lumaHeight <= maxSizeEmtIntra ) )
   {
-    if ( (lumaWidth <= KLTSPLIT_INTRA_MIN_CU) && (lumaHeight <= KLTSPLIT_INTRA_MIN_CU) )
+    if ((lumaWidth * lumaHeight < (KLTSPLIT_INTRA_MIN_CU << 1)))
     {
-      (*tu.cu).kltFlag = m_BinDecoder.decodeBin(Ctx::KLTCuFlag(0));
+      (*tu.cu).kltFlag = m_BinDecoder.decodeBin(Ctx::KLTCuFlag(depth));
       tu.kltIdx = 0;
     }
     else

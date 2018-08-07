@@ -1450,7 +1450,7 @@ Void IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
   Bool       checkTransformSkip                 = pps.getUseTransformSkip();
   Int        bestModeId[MAX_NUM_COMPONENT]      = {0, 0, 0};
 #if INTRA_KLT_MATRIX
-  UChar      nNumTransformCands                  = (cu.kltFlag && (currArea.lwidth() > KLTSPLIT_INTRA_MIN_CU || currArea.lheight() > KLTSPLIT_INTRA_MIN_CU)) ? 3 : 1; //4 is the number of transforms of klt
+  UChar      nNumTransformCands                  = (cu.kltFlag && (currArea.lwidth() * currArea.lheight() < (KLTSPLIT_INTRA_MIN_CU << 1))) ? 3 : 1; //4 is the number of transforms of klt
 #else
   UChar      nNumTransformCands                 = 1;
 #endif
