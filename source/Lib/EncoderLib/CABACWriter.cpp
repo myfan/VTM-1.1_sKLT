@@ -2335,15 +2335,16 @@ Void CABACWriter::klt_tu_index( const TransformUnit& tu )
   }
   if( CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeEmtIntra ) && ( tu.cu->Y().height <= maxSizeEmtIntra ) )
   {
-    UChar trIdx = tu.kltIdx; //! 0: kltFlag = 0, 1~3: kltFlag = 1, klt index
-    if (trIdx == 3)
+    UChar trIdx = tu.kltIdx + (UChar)((*tu.cu).kltFlag); //! 0: kltFlag = 0, 1~3: kltFlag = 1, klt index
+    if (trIdx == 1)
     {
+      CHECK(!((*tu.cu).kltFlag), "Error Klt Signal");
       m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(0));
     }
     else
     {
       m_BinEncoder.encodeBin(0, Ctx::KLTTuIndex(0));
-      if (trIdx == 1)
+      if (trIdx == 3)
       {
         m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(1));
       }

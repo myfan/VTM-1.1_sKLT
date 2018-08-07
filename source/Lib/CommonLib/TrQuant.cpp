@@ -65,14 +65,14 @@ struct coeffGroupRDStats
 #if INTRA_KLT_MATRIX
 FwdTrans *fastFwdTrans[2][7] =
 {
-  { fastForwardDCT2_B2, fastForwardDCT2_B4, fastForwardDCT2_B8, fastForwardDCT2_B16, fastForwardDCT2_B32, fastForwardDCT2_B64, fastForwardDCT2_B128 },
   { NULL,               fastForwardKLT_B4, fastForwardKLT_B8, fastForwardKLT_B16, fastForwardKLT_B32, fastForwardKLT_B64, fastForwardKLT_B128 },
+  { fastForwardDCT2_B2, fastForwardDCT2_B4, fastForwardDCT2_B8, fastForwardDCT2_B16, fastForwardDCT2_B32, fastForwardDCT2_B64, fastForwardDCT2_B128 },
 };
 
 InvTrans *fastInvTrans[2][7] =
 {
-  { fastInverseDCT2_B2, fastInverseDCT2_B4, fastInverseDCT2_B8, fastInverseDCT2_B16, fastInverseDCT2_B32, fastInverseDCT2_B64, fastInverseDCT2_B128 },
   { NULL,               fastInverseKLT_B4, fastInverseKLT_B8, fastInverseKLT_B16, fastInverseKLT_B32, fastInverseKLT_B64, fastInverseKLT_B128 },
+  { fastInverseDCT2_B2, fastInverseDCT2_B4, fastInverseDCT2_B8, fastInverseDCT2_B16, fastInverseDCT2_B32, fastInverseDCT2_B64, fastInverseDCT2_B128 },
 };
 #endif
 

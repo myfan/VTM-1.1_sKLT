@@ -2311,14 +2311,14 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
     bool uiSymbol1 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 0 ) );
     if (uiSymbol1)
     {
-      trIdx = 3;
+      trIdx = 1;
     }
     else
     {
       bool uiSymbol2 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(1));
       if (uiSymbol2)
       {
-        trIdx = 1;
+        trIdx = 3;
       }
       else
       {
@@ -2350,10 +2350,15 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
   kltIdxHist[trIdx]++;
 #endif
 
-  tu.kltIdx = trIdx;
   if (trIdx != 0)
   {
+    tu.kltIdx = trIdx - 1;
     (*tu.cu).kltFlag = 1;
+  }
+  else
+  {
+    tu.kltIdx = trIdx;
+    (*tu.cu).kltFlag = 0;
   }
 }
 #endif

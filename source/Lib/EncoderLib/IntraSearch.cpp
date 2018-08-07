@@ -1559,7 +1559,7 @@ Void IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
       }
 
 #if INTRA_KLT_MATRIX
-      UChar transformIndex = cu.kltFlag ? (1 + modeId) : 0;
+      UChar transformIndex = cu.kltFlag ? modeId : 0;
 #endif
 
 
