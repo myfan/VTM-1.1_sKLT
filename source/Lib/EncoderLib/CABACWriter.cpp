@@ -1404,7 +1404,7 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
       }
 #endif
     }
-#if INTRA_KLT_MATRIX
+#if INTRA_KLT_MATRIX & 0
     if (trDepth == 0) klt_cu_flag(cu);
 #endif
 
@@ -1466,7 +1466,7 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
       }
     }
 
-#if INTRA_KLT_MATRIX
+#if INTRA_KLT_MATRIX & 0
 #if HEVC_USE_RQT || ENABLE_BMS
     if( trDepth == 0 ) klt_cu_flag( cu );
 #else
@@ -2335,25 +2335,33 @@ Void CABACWriter::klt_tu_index( const TransformUnit& tu )
 
   SizeType lumaWidth = tu.cu->Y().width;
   SizeType lumaHeight = tu.cu->Y().height;
-  if( CU::isIntra( *tu.cu ) && (lumaWidth <= maxSizeEmtIntra ) && (lumaHeight <= maxSizeEmtIntra ) && ( (lumaWidth > KLTSPLIT_INTRA_MIN_CU) || (lumaHeight > KLTSPLIT_INTRA_MIN_CU) ) )
+  if( CU::isIntra( *tu.cu ) && (lumaWidth <= maxSizeEmtIntra ) && (lumaHeight <= maxSizeEmtIntra ) )
   {
-    UChar trIdx = tu.kltIdx + (UChar)((*tu.cu).kltFlag); //! 0: kltFlag = 0, 1~3: kltFlag = 1, klt index
-    if (trIdx == 1)
+    if ( (lumaWidth <= KLTSPLIT_INTRA_MIN_CU) && (lumaHeight <= KLTSPLIT_INTRA_MIN_CU) )
     {
-      CHECK(!((*tu.cu).kltFlag), "Error Klt Signal");
-      m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(0));
+      CHECK(tu.kltIdx != 0, "Error KLT Index for small blocks");
+      m_BinEncoder.encodeBin(((*tu.cu).kltFlag), Ctx::KLTCuFlag(0));
     }
     else
     {
-      m_BinEncoder.encodeBin(0, Ctx::KLTTuIndex(0));
-      if (trIdx == 3)
+      UChar trIdx = tu.kltIdx + (UChar)((*tu.cu).kltFlag); //! 0: kltFlag = 0, 1~3: kltFlag = 1, klt index
+      if (trIdx == 1)
       {
-        m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(1));
+        CHECK(!((*tu.cu).kltFlag), "Error Klt Signal");
+        m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(0));
       }
       else
       {
-        m_BinEncoder.encodeBin(0, Ctx::KLTTuIndex(1));
-        m_BinEncoder.encodeBin((trIdx == 2), Ctx::KLTTuIndex(2));
+        m_BinEncoder.encodeBin(0, Ctx::KLTTuIndex(0));
+        if (trIdx == 3)
+        {
+          m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(1));
+        }
+        else
+        {
+          m_BinEncoder.encodeBin(0, Ctx::KLTTuIndex(1));
+          m_BinEncoder.encodeBin((trIdx == 2), Ctx::KLTTuIndex(2));
+        }
       }
     }
     DTRACE( g_trace_ctx, D_SYNTAX, "emt_tu_index() etype=%d pos=(%d,%d) emtTrIdx=%d\n", COMPONENT_Y, tu.blocks[COMPONENT_Y].x, tu.blocks[COMPONENT_Y].y, ( int ) tu.kltIdx );

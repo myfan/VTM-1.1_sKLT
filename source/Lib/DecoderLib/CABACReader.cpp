@@ -1270,7 +1270,7 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
   if( split )
   {
     {
-#if INTRA_KLT_MATRIX
+#if INTRA_KLT_MATRIX & 0
       if (trDepth == 0) klt_cu_flag(cu);
 #endif
 
@@ -1429,7 +1429,7 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
 #endif
     }
 
-#if INTRA_KLT_MATRIX
+#if INTRA_KLT_MATRIX & 0
 #if HEVC_USE_RQT || ENABLE_BMS
     if (trDepth == 0) klt_cu_flag(cu);
 #else
@@ -2307,45 +2307,52 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
 
   SizeType lumaWidth = tu.cu->Y().width;
   SizeType lumaHeight = tu.cu->Y().height;
-  if( CU::isIntra( *tu.cu ) && (lumaWidth <= maxSizeEmtIntra ) && (lumaHeight <= maxSizeEmtIntra ) && ( (lumaWidth > KLTSPLIT_INTRA_MIN_CU) || (lumaHeight > KLTSPLIT_INTRA_MIN_CU) ) )
+  if( CU::isIntra( *tu.cu ) && (lumaWidth <= maxSizeEmtIntra ) && (lumaHeight <= maxSizeEmtIntra ) )
   {
-    bool uiSymbol1 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 0 ) );
-    if (uiSymbol1)
+    if ( (lumaWidth <= KLTSPLIT_INTRA_MIN_CU) && (lumaHeight <= KLTSPLIT_INTRA_MIN_CU) )
     {
-      trIdx = 1;
+      (*tu.cu).kltFlag = m_BinDecoder.decodeBin(Ctx::KLTCuFlag(0));
+      tu.kltIdx = 0;
     }
     else
     {
-      bool uiSymbol2 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(1));
-      if (uiSymbol2)
+      bool uiSymbol1 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(0));
+      if (uiSymbol1)
       {
-        trIdx = 3;
+        trIdx = 1;
       }
       else
       {
-        bool uiSymbol3 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(2));
-        if (uiSymbol3)
+        bool uiSymbol2 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(1));
+        if (uiSymbol2)
         {
-          trIdx = 2;
+          trIdx = 3;
         }
         else
         {
-          trIdx = 0;
+          bool uiSymbol3 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(2));
+          if (uiSymbol3)
+          {
+            trIdx = 2;
+          }
+          else
+          {
+            trIdx = 0;
+          }
         }
       }
-    }
 
-    if (trIdx != 0)
-    {
-      tu.kltIdx = trIdx - 1;
-      (*tu.cu).kltFlag = 1;
+      if (trIdx != 0)
+      {
+        tu.kltIdx = trIdx - 1;
+        (*tu.cu).kltFlag = 1;
+      }
+      else
+      {
+        tu.kltIdx = trIdx;
+        (*tu.cu).kltFlag = 0;
+      }
     }
-    else
-    {
-      tu.kltIdx = trIdx;
-      (*tu.cu).kltFlag = 0;
-    }
-
     DTRACE( g_trace_ctx, D_SYNTAX, "emt_tu_index() etype=%d pos=(%d,%d) emtTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int ) trIdx );
   }
   if( !CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeEmtInter ) && ( tu.cu->Y().height <= maxSizeEmtInter ) )
