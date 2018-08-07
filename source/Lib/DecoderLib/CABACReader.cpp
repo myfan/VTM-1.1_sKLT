@@ -1270,7 +1270,7 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
   if( split )
   {
     {
-#if INTRA_KLT_MATRIX & 0
+#if INTRA_KLT_MATRIX
       if (trDepth == 0) klt_cu_flag(cu);
 #endif
 
@@ -1429,7 +1429,7 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
 #endif
     }
 
-#if INTRA_KLT_MATRIX & 0
+#if INTRA_KLT_MATRIX
 #if HEVC_USE_RQT || ENABLE_BMS
     if (trDepth == 0) klt_cu_flag(cu);
 #else
@@ -2281,7 +2281,7 @@ Void CABACReader::klt_cu_flag(CodingUnit& cu)
   const unsigned cuHeight = cu.lheight();
 
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET_SIZE2( STATS__CABAC_BITS__KLT_CU_FLAG, cu.lumaSize(), CHANNEL_TYPE_LUMA );
-  if (cuWidth <= 32 && cuHeight <= 32)
+  if (cuWidth <= KLTSPLIT_INTRA_MIN_CU && cuHeight <= KLTSPLIT_INTRA_MIN_CU)
   {
     bool uiCuFlag = m_BinDecoder.decodeBin(Ctx::KLTCuFlag(depth));
     cu.kltFlag = uiCuFlag;
@@ -2306,7 +2306,9 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
   UChar trIdx = 0;
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET_SIZE2( STATS__CABAC_BITS__KLT_TU_INDEX, tu.cu->lumaSize(), CHANNEL_TYPE_LUMA );
 
-  if( CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeEmtIntra ) && ( tu.cu->Y().height <= maxSizeEmtIntra ) )
+  SizeType lumaWidth = tu.cu->Y().width;
+  SizeType lumaHeight = tu.cu->Y().height;
+  if( CU::isIntra( *tu.cu ) && (lumaWidth <= maxSizeEmtIntra ) && (lumaHeight <= maxSizeEmtIntra ) && ( (lumaWidth > KLTSPLIT_INTRA_MIN_CU) || (lumaHeight > KLTSPLIT_INTRA_MIN_CU) ) )
   {
     bool uiSymbol1 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 0 ) );
     if (uiSymbol1)
@@ -2334,6 +2336,17 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
       }
     }
 
+    if (trIdx != 0)
+    {
+      tu.kltIdx = trIdx - 1;
+      (*tu.cu).kltFlag = 1;
+    }
+    else
+    {
+      tu.kltIdx = trIdx;
+      (*tu.cu).kltFlag = 0;
+    }
+
     DTRACE( g_trace_ctx, D_SYNTAX, "emt_tu_index() etype=%d pos=(%d,%d) emtTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int ) trIdx );
   }
   if( !CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeEmtInter ) && ( tu.cu->Y().height <= maxSizeEmtInter ) )
@@ -2349,16 +2362,5 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
 #if STAT_KLT_IDX
   kltIdxHist[trIdx]++;
 #endif
-
-  if (trIdx != 0)
-  {
-    tu.kltIdx = trIdx - 1;
-    (*tu.cu).kltFlag = 1;
-  }
-  else
-  {
-    tu.kltIdx = trIdx;
-    (*tu.cu).kltFlag = 0;
-  }
 }
 #endif

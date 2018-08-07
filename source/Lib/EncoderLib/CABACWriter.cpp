@@ -1404,7 +1404,7 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
       }
 #endif
     }
-#if INTRA_KLT_MATRIX & 0
+#if INTRA_KLT_MATRIX
     if (trDepth == 0) klt_cu_flag(cu);
 #endif
 
@@ -1466,7 +1466,7 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
       }
     }
 
-#if INTRA_KLT_MATRIX & 0
+#if INTRA_KLT_MATRIX
 #if HEVC_USE_RQT || ENABLE_BMS
     if( trDepth == 0 ) klt_cu_flag( cu );
 #else
@@ -2313,7 +2313,7 @@ Void CABACWriter::klt_cu_flag( const CodingUnit& cu )
   const unsigned cuWidth  = cu.lwidth();
   const unsigned cuHeight = cu.lheight();
 
-  if (cuWidth <= 32 && cuHeight <= 32)
+  if (cuWidth <= KLTSPLIT_INTRA_MIN_CU && cuHeight <= KLTSPLIT_INTRA_MIN_CU)
   {
     m_BinEncoder.encodeBin( cu.kltFlag, Ctx::KLTCuFlag( depth ) );
     DTRACE( g_trace_ctx, D_SYNTAX, "emt_cu_flag() etype=%d pos=(%d,%d) emtCuFlag=%d\n", COMPONENT_Y, cu.lx(), cu.ly(), ( int ) cu.emtFlag );
@@ -2333,7 +2333,10 @@ Void CABACWriter::klt_tu_index( const TransformUnit& tu )
     maxSizeEmtIntra = EMT_INTRA_MAX_CU;
     maxSizeEmtInter = EMT_INTER_MAX_CU;
   }
-  if( CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeEmtIntra ) && ( tu.cu->Y().height <= maxSizeEmtIntra ) )
+
+  SizeType lumaWidth = tu.cu->Y().width;
+  SizeType lumaHeight = tu.cu->Y().height;
+  if( CU::isIntra( *tu.cu ) && (lumaWidth <= maxSizeEmtIntra ) && (lumaHeight <= maxSizeEmtIntra ) && ( (lumaWidth > KLTSPLIT_INTRA_MIN_CU) || (lumaHeight > KLTSPLIT_INTRA_MIN_CU) ) )
   {
     UChar trIdx = tu.kltIdx + (UChar)((*tu.cu).kltFlag); //! 0: kltFlag = 0, 1~3: kltFlag = 1, klt index
     if (trIdx == 1)
