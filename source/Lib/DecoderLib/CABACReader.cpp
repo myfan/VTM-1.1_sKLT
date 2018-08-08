@@ -2310,7 +2310,7 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
   unsigned depth = (*tu.cu).qtDepth;
   if( CU::isIntra( *tu.cu ) && (lumaWidth <= maxSizeEmtIntra ) && (lumaHeight <= maxSizeEmtIntra ) )
   {
-    if ((lumaWidth * lumaHeight < (KLTSPLIT_INTRA_MIN_CU * KLTSPLIT_INTRA_MIN_CU)))
+    if ( (lumaWidth <= KLTSPLIT_INTRA_MIN_CU) && (lumaHeight <= KLTSPLIT_INTRA_MIN_CU) )
     {
       (*tu.cu).kltFlag = m_BinDecoder.decodeBin(Ctx::KLTCuFlag(depth));
       tu.kltIdx = 0;

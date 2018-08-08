@@ -2338,7 +2338,7 @@ Void CABACWriter::klt_tu_index( const TransformUnit& tu )
   unsigned depth = (*tu.cu).qtDepth;
   if( CU::isIntra( *tu.cu ) && (lumaWidth <= maxSizeEmtIntra ) && (lumaHeight <= maxSizeEmtIntra ) )
   {
-    if ((lumaWidth * lumaHeight < (KLTSPLIT_INTRA_MIN_CU * KLTSPLIT_INTRA_MIN_CU)))
+    if ( (lumaWidth <= KLTSPLIT_INTRA_MIN_CU) && (lumaHeight <= KLTSPLIT_INTRA_MIN_CU) )
     {
       CHECK(tu.kltIdx != 0, "Error KLT Index for small blocks");
       m_BinEncoder.encodeBin(((*tu.cu).kltFlag), Ctx::KLTCuFlag(depth));
