@@ -144,10 +144,12 @@ extern TMatrixCoeff g_aiKLT8[8][8];
 extern TMatrixCoeff g_aiKLT4[4][4];
 extern TMatrixCoeff g_aiKLT16[16][16];
 extern TMatrixCoeff g_aiKLT32[32][32];
+extern TMatrixCoeff g_aiKLT64[64][64];
 extern TMatrixCoeff g_aiKLT8HP[8][8];
 extern TMatrixCoeff g_aiKLT4HP[4][4];
 extern TMatrixCoeff g_aiKLT16HP[16][16];
 extern TMatrixCoeff g_aiKLT32HP[32][32];
+extern TMatrixCoeff g_aiKLT64HP[64][64];
 #endif
 
 // ====================================================================================================================
