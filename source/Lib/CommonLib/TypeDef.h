@@ -95,6 +95,7 @@
 #endif
 
 #if INTRA_KLT_MATRIX
+#define INTRA_KLT_SET_COMB                                1 // 1: combine the KLT and DCT-II matrices, 0: no combination
 #define STAT_KLT_IDX                                      0
 #endif
 

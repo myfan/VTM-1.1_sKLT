@@ -140,7 +140,7 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
 
   CHECK(shift_1st < 0, "Negative shift");
   CHECK(shift_2nd < 0, "Negative shift");
-  CHECK(ucTrIdx < 1 && ucTrIdx > 3, "Incorrect transform index");
+  CHECK(ucTrIdx < 0 || ucTrIdx > 2, "Incorrect transform index");
 
   ALIGN_DATA(MEMORY_ALIGN_DEF_SIZE, TCoeff block[MAX_TU_SIZE * MAX_TU_SIZE]);
 
@@ -201,7 +201,7 @@ void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
 
   CHECK( shift_1st < 0, "Negative shift" );
   CHECK( shift_2nd < 0, "Negative shift" );
-  CHECK(ucTrIdx < 1 && ucTrIdx > 3, "Incorrect transform index");
+  CHECK( ucTrIdx < 0 || ucTrIdx > 2, "Incorrect transform index" );
 
   TCoeff *tmp   = ( TCoeff * ) alloca( iWidth * iHeight * sizeof( TCoeff ) );
   TCoeff *block = ( TCoeff * ) alloca( iWidth * iHeight * sizeof( TCoeff ) );
