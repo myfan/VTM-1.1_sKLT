@@ -1404,7 +1404,7 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
       }
 #endif
     }
-#if INTRA_KLT_MATRIX & 0
+#if !INTRA_KLT_SET_COMB
     if (trDepth == 0) klt_cu_flag(cu);
 #endif
 
@@ -1466,7 +1466,7 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
       }
     }
 
-#if INTRA_KLT_MATRIX & 0
+#if !INTRA_KLT_SET_COMB
 #if HEVC_USE_RQT || ENABLE_BMS
     if( trDepth == 0 ) klt_cu_flag( cu );
 #else
@@ -1786,7 +1786,7 @@ void CABACWriter::cu_chroma_qp_offset( const CodingUnit& cu )
 
 void CABACWriter::residual_coding( const TransformUnit& tu, ComponentID compID )
 {
-#if ENABLE_TRACING || HEVC_USE_SIGN_HIDING || INTRA_KLT_MATRIX
+#if ENABLE_TRACING || HEVC_USE_SIGN_HIDING || INTRA_KLT_SET_COMB
   const CodingUnit& cu = *tu.cu;
 #endif
   DTRACE( g_trace_ctx, D_SYNTAX, "residual_coding() etype=%d pos=(%d,%d) size=%dx%d predMode=%d\n", tu.blocks[compID].compID, tu.blocks[compID].x, tu.blocks[compID].y, tu.blocks[compID].width, tu.blocks[compID].height, cu.predMode );
@@ -1838,7 +1838,7 @@ void CABACWriter::residual_coding( const TransformUnit& tu, ComponentID compID )
 
   // code subblocks
   cctx.setGoRiceStats( GRStats );
-#if INTRA_KLT_MATRIX
+#if INTRA_KLT_SET_COMB
   bool useEmt = ( cu.cs->sps->getSpsNext().getUseIntraKLT() && cu.predMode == MODE_INTRA ) || ( cu.cs->sps->getSpsNext().getUseInterKLT() && cu.predMode != MODE_INTRA );
   useEmt = useEmt && isLuma(compID);
 #endif
@@ -1850,7 +1850,7 @@ void CABACWriter::residual_coding( const TransformUnit& tu, ComponentID compID )
 
   }
   GRStats = cctx.currGoRiceStats();
-#if INTRA_KLT_MATRIX
+#if INTRA_KLT_SET_COMB
   if (useEmt)
   {
     if (!tu.transformSkip[compID])
@@ -2312,7 +2312,7 @@ Void CABACWriter::klt_cu_flag( const CodingUnit& cu )
   const unsigned cuWidth  = cu.lwidth();
   const unsigned cuHeight = cu.lheight();
 
-  if (cuWidth <= KLTSPLIT_INTRA_MIN_CU && cuHeight <= KLTSPLIT_INTRA_MIN_CU)
+  if (cuWidth <= EMT_INTRA_MAX_CU_WITH_QTBT && cuHeight <= EMT_INTRA_MAX_CU_WITH_QTBT)
   {
     m_BinEncoder.encodeBin( cu.kltFlag, Ctx::KLTCuFlag( depth ) );
     DTRACE( g_trace_ctx, D_SYNTAX, "emt_cu_flag() etype=%d pos=(%d,%d) emtCuFlag=%d\n", COMPONENT_Y, cu.lx(), cu.ly(), ( int ) cu.kltFlag );

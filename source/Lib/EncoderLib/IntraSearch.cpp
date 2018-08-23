@@ -1087,7 +1087,7 @@ Void IntraSearch::xEncSubdivCbfQT(CodingStructure &cs, Partitioner &partitioner,
 #if HEVC_USE_RQT || ENABLE_BMS
   if (subdiv)
   {
-#if INTRA_KLT_MATRIX & 0
+#if !INTRA_KLT_SET_COMB
     CodingUnit &currCU = *currTU.cu;
     if( currDepth == 0 && bLuma ) m_CABACEstimator->klt_cu_flag( currCU );
 #endif
@@ -1115,7 +1115,7 @@ Void IntraSearch::xEncSubdivCbfQT(CodingStructure &cs, Partitioner &partitioner,
   else
 #endif
   {
-#if INTRA_KLT_MATRIX & 0
+#if !INTRA_KLT_SET_COMB
 #if HEVC_USE_RQT || ENABLE_BMS
     CodingUnit &currCU = *currTU.cu;
     if( currDepth == 0 && bLuma ) m_CABACEstimator->klt_cu_flag( currCU );
@@ -1450,7 +1450,8 @@ Void IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
   Bool       checkTransformSkip                 = pps.getUseTransformSkip();
   Int        bestModeId[MAX_NUM_COMPONENT]      = {0, 0, 0};
 #if INTRA_KLT_MATRIX
-  UChar      nNumTransformCands                  = (cu.kltFlag && (currArea.lwidth() > KLTSPLIT_INTRA_MIN_CU || currArea.lheight() > KLTSPLIT_INTRA_MIN_CU)) ? 3 : 1; //4 is the number of transforms of klt
+  UChar      nNumKLTSets                        = INTRA_KLT_SET_COMB ? 3 : 1;
+  UChar      nNumTransformCands                 = (cu.kltFlag && (currArea.lwidth() > KLTSPLIT_INTRA_MIN_CU || currArea.lheight() > KLTSPLIT_INTRA_MIN_CU)) ? nNumKLTSets : 1; //4 is the number of transforms of klt
 #else
   UChar      nNumTransformCands                 = 1;
 #endif

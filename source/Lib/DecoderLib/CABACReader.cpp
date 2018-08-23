@@ -1270,7 +1270,7 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
   if( split )
   {
     {
-#if INTRA_KLT_MATRIX & 0
+#if !INTRA_KLT_SET_COMB
       if (trDepth == 0) klt_cu_flag(cu);
 #endif
 
@@ -1429,7 +1429,7 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
 #endif
     }
 
-#if INTRA_KLT_MATRIX & 0
+#if !INTRA_KLT_SET_COMB
 #if HEVC_USE_RQT || ENABLE_BMS
     if (trDepth == 0) klt_cu_flag(cu);
 #else
@@ -1741,7 +1741,7 @@ void CABACReader::cu_chroma_qp_offset( CodingUnit& cu )
 
 void CABACReader::residual_coding( TransformUnit& tu, ComponentID compID )
 {
-#if ENABLE_TRACING || HEVC_USE_SIGN_HIDING || INTRA_KLT_MATRIX
+#if ENABLE_TRACING || HEVC_USE_SIGN_HIDING || INTRA_KLT_SET_COMB
   const CodingUnit& cu = *tu.cu;
 #endif
   DTRACE( g_trace_ctx, D_SYNTAX, "residual_coding() etype=%d pos=(%d,%d) size=%dx%d predMode=%d\n", tu.blocks[compID].compID, tu.blocks[compID].x, tu.blocks[compID].y, tu.blocks[compID].width, tu.blocks[compID].height, cu.predMode );
@@ -1780,7 +1780,7 @@ void CABACReader::residual_coding( TransformUnit& tu, ComponentID compID )
   // parse subblocks
   cctx.setGoRiceStats( GRStats );
 
-#if INTRA_KLT_MATRIX
+#if INTRA_KLT_SET_COMB
   bool useEmt = ( cu.cs->sps->getSpsNext().getUseIntraKLT() && cu.predMode == MODE_INTRA ) || ( cu.cs->sps->getSpsNext().getUseInterKLT() && cu.predMode != MODE_INTRA );
   useEmt = useEmt && isLuma(compID);
 #endif
@@ -1791,7 +1791,7 @@ void CABACReader::residual_coding( TransformUnit& tu, ComponentID compID )
       residual_coding_subblock( cctx, coeff );
     }
   GRStats = cctx.currGoRiceStats();
-#if INTRA_KLT_MATRIX
+#if INTRA_KLT_SET_COMB
   if (useEmt)
   {
     if (!tu.transformSkip[compID])
@@ -2280,7 +2280,7 @@ Void CABACReader::klt_cu_flag(CodingUnit& cu)
   const unsigned cuHeight = cu.lheight();
 
   RExt__DECODER_DEBUG_BIT_STATISTICS_CREATE_SET_SIZE2( STATS__CABAC_BITS__KLT_CU_FLAG, cu.lumaSize(), CHANNEL_TYPE_LUMA );
-  if (cuWidth <= KLTSPLIT_INTRA_MIN_CU && cuHeight <= KLTSPLIT_INTRA_MIN_CU)
+  if (cuWidth <= EMT_INTRA_MAX_CU_WITH_QTBT && cuHeight <= EMT_INTRA_MAX_CU_WITH_QTBT)
   {
     bool uiCuFlag = m_BinDecoder.decodeBin(Ctx::KLTCuFlag(depth));
     cu.kltFlag = uiCuFlag;
