@@ -197,12 +197,12 @@ static const Int DM_CHROMA_IDX =                       NUM_INTRA_MODE; ///< chro
 
 static const UChar INTER_MODE_IDX =                               255; ///< index for inter modes
 #if INTRA_KLT_MATRIX
-static const UInt  EMT_INTRA_MAX_CU =                              32; ///< Max Intra CU size applying EMT, supported values: 8, 16, 32, 64, 128
-static const UInt  EMT_INTER_MAX_CU =                              32; ///< Max Inter CU size applying EMT, supported values: 8, 16, 32, 64, 128
-static const UInt  EMT_INTRA_MAX_CU_WITH_QTBT =                    64; ///< Max Intra CU size applying EMT, supported values: 8, 16, 32, 64, 128
-static const UInt  EMT_INTER_MAX_CU_WITH_QTBT =                    64; ///< Max Inter CU size applying EMT, supported values: 8, 16, 32, 64, 128
-static const UInt  KLTSPLIT_INTRA_MIN_CU =                          8; ///< Min Intra CU size applying EMT, supported values: 8, 16, 32, 64, 128
-static const UInt  KLTSPLIT_INTER_MIN_CU =                          8; ///< Min Intra CU size applying EMT, supported values: 8, 16, 32, 64, 128
+static const UInt  KLT_INTRA_MAX_CU =                              32; ///< Max Intra CU size applying KLT, supported values: 8, 16, 32, 64, 128
+static const UInt  KLT_INTER_MAX_CU =                              32; ///< Max Inter CU size applying KLT, supported values: 8, 16, 32, 64, 128
+static const UInt  KLT_INTRA_MAX_CU_WITH_QTBT =                    64; ///< Max Intra CU size applying KLT, supported values: 8, 16, 32, 64, 128
+static const UInt  KLT_INTER_MAX_CU_WITH_QTBT =                    64; ///< Max Inter CU size applying KLT, supported values: 8, 16, 32, 64, 128
+static const UInt  KLTSPLIT_INTRA_MIN_CU =                          8; ///< Min Intra CU size applying KLT, supported values: 8, 16, 32, 64, 128
+static const UInt  KLTSPLIT_INTER_MIN_CU =                          8; ///< Min Intra CU size applying KLT, supported values: 8, 16, 32, 64, 128
 #endif
 static const Int NUM_MOST_PROBABLE_MODES =                          3;
 static const Int NUM_MOST_PROBABLE_MODES_67 =                       6;

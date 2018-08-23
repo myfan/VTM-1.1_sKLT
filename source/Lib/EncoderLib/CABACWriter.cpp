@@ -1839,8 +1839,8 @@ void CABACWriter::residual_coding( const TransformUnit& tu, ComponentID compID )
   // code subblocks
   cctx.setGoRiceStats( GRStats );
 #if INTRA_KLT_SET_COMB
-  bool useEmt = ( cu.cs->sps->getSpsNext().getUseIntraKLT() && cu.predMode == MODE_INTRA ) || ( cu.cs->sps->getSpsNext().getUseInterKLT() && cu.predMode != MODE_INTRA );
-  useEmt = useEmt && isLuma(compID);
+  bool useKlt = ( cu.cs->sps->getSpsNext().getUseIntraKLT() && cu.predMode == MODE_INTRA ) || ( cu.cs->sps->getSpsNext().getUseInterKLT() && cu.predMode != MODE_INTRA );
+  useKlt = useKlt && isLuma(compID);
 #endif
 
   for( int subSetId = ( cctx.scanPosLast() >> cctx.log2CGSize() ); subSetId >= 0; subSetId--)
@@ -1851,7 +1851,7 @@ void CABACWriter::residual_coding( const TransformUnit& tu, ComponentID compID )
   }
   GRStats = cctx.currGoRiceStats();
 #if INTRA_KLT_SET_COMB
-  if (useEmt)
+  if (useKlt)
   {
     if (!tu.transformSkip[compID])
     {
@@ -2312,31 +2312,31 @@ Void CABACWriter::klt_cu_flag( const CodingUnit& cu )
   const unsigned cuWidth  = cu.lwidth();
   const unsigned cuHeight = cu.lheight();
 
-  if (cuWidth <= EMT_INTRA_MAX_CU_WITH_QTBT && cuHeight <= EMT_INTRA_MAX_CU_WITH_QTBT)
+  if (cuWidth <= KLT_INTRA_MAX_CU_WITH_QTBT && cuHeight <= KLT_INTRA_MAX_CU_WITH_QTBT)
   {
     m_BinEncoder.encodeBin( cu.kltFlag, Ctx::KLTCuFlag( depth ) );
-    DTRACE( g_trace_ctx, D_SYNTAX, "emt_cu_flag() etype=%d pos=(%d,%d) emtCuFlag=%d\n", COMPONENT_Y, cu.lx(), cu.ly(), ( int ) cu.kltFlag );
+    DTRACE( g_trace_ctx, D_SYNTAX, "klt_cu_flag() etype=%d pos=(%d,%d) kltCuFlag=%d\n", COMPONENT_Y, cu.lx(), cu.ly(), ( int ) cu.kltFlag );
   }
 }
 
 Void CABACWriter::klt_tu_index( const TransformUnit& tu )
 {
-  int maxSizeEmtIntra, maxSizeEmtInter;
+  int maxSizeKltIntra, maxSizeKltInter;
   if( tu.cs->pcv->noRQT )
   {
-    maxSizeEmtIntra = EMT_INTRA_MAX_CU_WITH_QTBT;
-    maxSizeEmtInter = EMT_INTER_MAX_CU_WITH_QTBT;
+    maxSizeKltIntra = KLT_INTRA_MAX_CU_WITH_QTBT;
+    maxSizeKltInter = KLT_INTER_MAX_CU_WITH_QTBT;
   }
   else
   {
-    maxSizeEmtIntra = EMT_INTRA_MAX_CU;
-    maxSizeEmtInter = EMT_INTER_MAX_CU;
+    maxSizeKltIntra = KLT_INTRA_MAX_CU;
+    maxSizeKltInter = KLT_INTER_MAX_CU;
   }
 
   SizeType lumaWidth = tu.cu->Y().width;
   SizeType lumaHeight = tu.cu->Y().height;
   unsigned depth = (*tu.cu).qtDepth;
-  if( CU::isIntra( *tu.cu ) && (lumaWidth <= maxSizeEmtIntra ) && (lumaHeight <= maxSizeEmtIntra ) )
+  if( CU::isIntra( *tu.cu ) && (lumaWidth <= maxSizeKltIntra ) && (lumaHeight <= maxSizeKltIntra ) )
   {
     if ( (lumaWidth <= KLTSPLIT_INTRA_MIN_CU) && (lumaHeight <= KLTSPLIT_INTRA_MIN_CU) )
     {
@@ -2365,14 +2365,14 @@ Void CABACWriter::klt_tu_index( const TransformUnit& tu )
         }
       }
     }
-    DTRACE( g_trace_ctx, D_SYNTAX, "emt_tu_index() etype=%d pos=(%d,%d) emtTrIdx=%d\n", COMPONENT_Y, tu.blocks[COMPONENT_Y].x, tu.blocks[COMPONENT_Y].y, ( int ) tu.kltIdx );
+    DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.blocks[COMPONENT_Y].x, tu.blocks[COMPONENT_Y].y, ( int ) tu.kltIdx );
   }
-  if( !CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeEmtInter ) && ( tu.cu->Y().height <= maxSizeEmtInter ) )
+  if( !CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeKltInter ) && ( tu.cu->Y().height <= maxSizeKltInter ) )
   {
     UChar trIdx = tu.kltIdx;
     m_BinEncoder.encodeBin( ( trIdx & 1 ) ? 1 : 0, Ctx::KLTTuIndex( 2 ) );
     m_BinEncoder.encodeBin( ( trIdx / 2 ) ? 1 : 0, Ctx::KLTTuIndex( 3 ) );
-    DTRACE( g_trace_ctx, D_SYNTAX, "emt_tu_index() etype=%d pos=(%d,%d) emtTrIdx=%d\n", COMPONENT_Y, tu.blocks[COMPONENT_Y].x, tu.blocks[COMPONENT_Y].y, ( int ) tu.kltIdx );
+    DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.blocks[COMPONENT_Y].x, tu.blocks[COMPONENT_Y].y, ( int ) tu.kltIdx );
   }
 }
 #endif

@@ -804,7 +804,7 @@ Bool EncAppCfg::parseCfg( Int argc, TChar* argv[] )
   ("AltDQPCoding",                                    m_AltDQPCoding,                                   false, "Improved predictive delta-QP coding (0:off, 1:on)  [default: off]")
 #endif
 #if INTRA_KLT_MATRIX
-   ("KLT,-klt",                                       m_KLT,                                                0, "Enhanced Multiple Transform (EMT)\n"
+   ("KLT,-klt",                                       m_KLT,                                                0, "K-L Transform (KLT)\n"
     "\t0:  Disable KLT\n"
     "\t1:  Enable only Intra KLT\n"
     "\t2:  Enable only Inter KLT\n"
