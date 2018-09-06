@@ -140,16 +140,17 @@ extern TMatrixCoeff g_aiTr64  [NUM_TRANS_TYPE][ 64][ 64];
 extern TMatrixCoeff g_aiTr128 [NUM_TRANS_TYPE][128][128];
 
 #if INTRA_KLT_MATRIX
-extern TMatrixCoeff g_aiKLT8[8][8];
-extern TMatrixCoeff g_aiKLT4[4][4];
-extern TMatrixCoeff g_aiKLT16[16][16];
-extern TMatrixCoeff g_aiKLT32[32][32];
-extern TMatrixCoeff g_aiKLT64[64][64];
-extern TMatrixCoeff g_aiKLT8HP[8][8];
-extern TMatrixCoeff g_aiKLT4HP[4][4];
-extern TMatrixCoeff g_aiKLT16HP[16][16];
-extern TMatrixCoeff g_aiKLT32HP[32][32];
-extern TMatrixCoeff g_aiKLT64HP[64][64];
+extern TMatrixCoeff g_aiKLT8[KLT_NUM][8][8];
+extern TMatrixCoeff g_aiKLT4[KLT_NUM][4][4];
+extern TMatrixCoeff g_aiKLT16[KLT_NUM][16][16];
+extern TMatrixCoeff g_aiKLT32[KLT_NUM][32][32];
+extern TMatrixCoeff g_aiKLT64[KLT_NUM][64][64];
+extern TMatrixCoeff g_aiKLT8HP[KLT_NUM][8][8];
+extern TMatrixCoeff g_aiKLT4HP[KLT_NUM][4][4];
+extern TMatrixCoeff g_aiKLT16HP[KLT_NUM][16][16];
+extern TMatrixCoeff g_aiKLT32HP[KLT_NUM][32][32];
+extern TMatrixCoeff g_aiKLT64HP[KLT_NUM][64][64];
+extern const UChar g_intraDirToKLTIdx[35];
 #endif
 
 // ====================================================================================================================

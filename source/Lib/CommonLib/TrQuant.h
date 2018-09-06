@@ -50,8 +50,8 @@
 //! \ingroup CommonLib
 //! \{
 
-typedef void FwdTrans(const TCoeff*, TCoeff*, Int, Int, Int, Int, Int);
-typedef void InvTrans(const TCoeff*, TCoeff*, Int, Int, Int, Int, Int, const TCoeff, const TCoeff);
+typedef void FwdTrans(const TCoeff*, TCoeff*, Int, Int, Int, Int, Int, UChar);
+typedef void InvTrans(const TCoeff*, TCoeff*, Int, Int, Int, Int, Int, const TCoeff, const TCoeff, UChar);
 
 // ====================================================================================================================
 // Class definition

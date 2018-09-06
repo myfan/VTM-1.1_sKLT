@@ -97,6 +97,18 @@
 #if INTRA_KLT_MATRIX
 #define INTRA_KLT_SET_COMB                                1 // 1: combine the KLT and DCT-II matrices, 0: no combination
 #define STAT_KLT_IDX                                      0
+
+enum KLTTransType
+{
+  KLTPLANARDC = 0,
+  KLTRU = 1,
+  KLTHOR = 2,
+  KLTDIAG = 3,
+  KLTVER = 4,
+  KLTLD = 5,
+  KLT_DEFAULT = 6,
+  KLT_NUM = 7,
+};
 #endif
 
 #ifndef ENABLE_TRACING

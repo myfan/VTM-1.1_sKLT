@@ -48,7 +48,7 @@
 // ********************************** DCT-II **********************************
 
 //Fast DCT-II transforms
-void fastForwardDCT2_B2(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardDCT2_B2(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, UChar dummy)
 {
   Int j;
   Int E, O;
@@ -82,7 +82,7 @@ void fastForwardDCT2_B2(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
   }
 }
 
-void fastInverseDCT2_B2(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseDCT2_B2(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, UChar dummy)
 {
   Int j;
   Int E, O;
@@ -128,7 +128,7 @@ void fastInverseDCT2_B2(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
 *  \param shift specifies right shift after 1D transform
 *  \param line
 */
-void fastForwardDCT2_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardDCT2_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, UChar dummy)
 {
   Int j;
   TCoeff E[2], O[2];
@@ -173,7 +173,7 @@ void fastForwardDCT2_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
 *  \param outputMinimum  minimum for clipping
 *  \param outputMaximum  maximum for clipping
 */
-void fastInverseDCT2_B4( const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum )
+void fastInverseDCT2_B4( const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, UChar dummy )
 {
   Int j;
   Int E[2], O[2];
@@ -284,7 +284,7 @@ inline void _fastForwardMM( const TCoeff *src, TCoeff *dst, Int shift, Int line,
 *  \param shift specifies right shift after 1D transform
 *  \param line
 */
-void fastForwardDCT2_B8( const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use )
+void fastForwardDCT2_B8( const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, UChar dummy )
 {
   Int j, k;
   TCoeff E[4], O[4];
@@ -341,7 +341,7 @@ void fastForwardDCT2_B8( const TCoeff *src, TCoeff *dst, Int shift, Int line, In
 *  \param outputMinimum  minimum for clipping
 *  \param outputMaximum  maximum for clipping
 */
-void fastInverseDCT2_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseDCT2_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, UChar dummy)
 {
   Int j, k;
   Int E[4], O[4];
@@ -391,7 +391,7 @@ void fastInverseDCT2_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
 *  \param shift specifies right shift after 1D transform
 *  \param line
 */
-void fastForwardDCT2_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardDCT2_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, UChar dummy)
 {
   Int j, k;
   TCoeff E  [8], O  [8];
@@ -462,7 +462,7 @@ void fastForwardDCT2_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, In
 *  \param outputMinimum  minimum for clipping
 *  \param outputMaximum  maximum for clipping
 */
-void fastInverseDCT2_B16( const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum )
+void fastInverseDCT2_B16( const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, UChar dummy )
 {
   Int j, k;
   Int E  [8], O  [8];
@@ -524,7 +524,7 @@ void fastInverseDCT2_B16( const TCoeff *src, TCoeff *dst, Int shift, Int line, I
 *  \param shift specifies right shift after 1D transform
 *  \param line
 */
-void fastForwardDCT2_B32( const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use )
+void fastForwardDCT2_B32( const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, UChar dummy )
 {
   Int j, k;
   TCoeff E   [16], O   [16];
@@ -605,7 +605,7 @@ void fastForwardDCT2_B32( const TCoeff *src, TCoeff *dst, Int shift, Int line, I
 *  \param outputMinimum  minimum for clipping
 *  \param outputMaximum  maximum for clipping
 */
-void fastInverseDCT2_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseDCT2_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, UChar dummy)
 {
 
   Int j, k;
@@ -673,7 +673,7 @@ void fastInverseDCT2_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, In
 
 
 
-void fastForwardDCT2_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardDCT2_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, UChar dummy)
 {
   int rnd_factor = 1 << (shift - 1);
 
@@ -779,7 +779,7 @@ void fastForwardDCT2_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, In
   }
 }
 
-void fastInverseDCT2_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseDCT2_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, UChar dummy)
 {
   int rnd_factor = 1 << (shift - 1);
   const int uiTrSize = 64;
@@ -866,7 +866,7 @@ void fastInverseDCT2_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, In
 
 
 
-void fastForwardDCT2_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardDCT2_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, UChar dummy)
 {
   int    j, k;
   TCoeff E[64], O[64];
@@ -1118,7 +1118,7 @@ void fastForwardDCT2_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, I
   }
 }
 
-void fastInverseDCT2_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseDCT2_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, UChar dummy)
 {
   int    j, k;
   TCoeff E[64], O[64];
@@ -1604,68 +1604,68 @@ void fastInverseDST7_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
 
 #if INTRA_KLT_MATRIX
 // 4x4
-void fastForwardKLT_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardKLT_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, UChar uhKLTIdx)
 {
-  _fastForwardMM< 4 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT4HP[0] : g_aiKLT4[0] );
+  _fastForwardMM< 4 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT4HP[uhKLTIdx][0] : g_aiKLT4[uhKLTIdx][0] );
 }
 
-void fastInverseKLT_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseKLT_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, UChar uhKLTIdx)
 {
-  _fastInverseMM< 4 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT4HP[0] : g_aiKLT4[0] );
+  _fastInverseMM< 4 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT4HP[uhKLTIdx][0] : g_aiKLT4[uhKLTIdx][0] );
 }
 
 // 8x8
-void fastForwardKLT_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardKLT_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, UChar uhKLTIdx)
 {
-  _fastForwardMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT8HP[0] : g_aiKLT8[0] );
+  _fastForwardMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT8HP[uhKLTIdx][0] : g_aiKLT8[uhKLTIdx][0] );
 }
 
-void fastInverseKLT_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseKLT_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, UChar uhKLTIdx)
 {
-  _fastInverseMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT8HP[0] : g_aiKLT8[0] );
+  _fastInverseMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT8HP[uhKLTIdx][0] : g_aiKLT8[uhKLTIdx][0] );
 }
 
 // 16x16
-void fastForwardKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, UChar uhKLTIdx)
 {
-  _fastForwardMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT16HP[0] : g_aiKLT16[0] );
+  _fastForwardMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT16HP[uhKLTIdx][0] : g_aiKLT16[uhKLTIdx][0] );
 }
 
-void fastInverseKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, UChar uhKLTIdx)
 {
-  _fastInverseMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT16HP[0] : g_aiKLT16[0] );
+  _fastInverseMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT16HP[uhKLTIdx][0] : g_aiKLT16[uhKLTIdx][0] );
 }
 
 // 32x32
-void fastForwardKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, UChar uhKLTIdx)
 {
-  _fastForwardMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT32HP[0] : g_aiKLT32[0] );
+  _fastForwardMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT32HP[uhKLTIdx][0] : g_aiKLT32[uhKLTIdx][0] );
 }
 
-void fastInverseKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, UChar uhKLTIdx)
 {
-  _fastInverseMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT32HP[0] : g_aiKLT32[0] );
-}
-
-
-void fastForwardKLT_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
-{
-  _fastForwardMM< 64 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT64HP[0] : g_aiKLT64[0] );
-}
-
-void fastInverseKLT_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
-{
-  _fastInverseMM< 64 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT64HP[0] : g_aiKLT64[0] );
+  _fastInverseMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT32HP[uhKLTIdx][0] : g_aiKLT32[uhKLTIdx][0] );
 }
 
 
-void fastForwardKLT_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardKLT_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, UChar uhKLTIdx)
+{
+  _fastForwardMM< 64 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT64HP[uhKLTIdx][0] : g_aiKLT64[uhKLTIdx][0] );
+}
+
+void fastInverseKLT_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, UChar uhKLTIdx)
+{
+  _fastInverseMM< 64 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT64HP[uhKLTIdx][0] : g_aiKLT64[uhKLTIdx][0] );
+}
+
+
+void fastForwardKLT_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, UChar uhKLTIdx)
 {
   _fastForwardMM< 128 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, g_aiTr128[DST7][0] );
 }
 
 
-void fastInverseKLT_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseKLT_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, UChar uhKLTIdx)
 {
   _fastInverseMM< 128 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, g_aiTr128[DST7][0] );
 }

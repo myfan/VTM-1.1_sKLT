@@ -162,8 +162,8 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
   }
 
   TCoeff *tmp = (TCoeff *)alloca(iWidth * iHeight * sizeof(TCoeff));
-  fastFwdTrans[ucTrIdx & 1][transformWidthIndex](block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
-  fastFwdTrans[ucTrIdx >> 1][transformHeightIndex](tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+  fastFwdTrans[ucTrIdx & 1][transformWidthIndex](block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1, ucMode);
+  fastFwdTrans[ucTrIdx >> 1][transformHeightIndex](tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1, ucMode);
 
 #if SEPARATE_KLT_DEBUG
   printf("\nCoefficient block after Row (1st) KLT:\n");
@@ -217,8 +217,8 @@ void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
     printf("\n");
   }
 #endif
-  fastInvTrans[ucTrIdx >> 1][transformHeightIndex](coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
-  fastInvTrans[ucTrIdx & 1][transformWidthIndex](tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
+  fastInvTrans[ucTrIdx >> 1][transformHeightIndex](coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum, ucMode);
+  fastInvTrans[ucTrIdx & 1][transformWidthIndex](tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum, ucMode);
 
 #if SEPARATE_KLT_DEBUG
   printf("\nCoefficient block after inverse Column (1st) KLT :\n");
@@ -299,7 +299,7 @@ void xTrMxN( const int bitDepth, const Pel *residual, size_t stride, TCoeff *coe
   {
     switch (iWidth)
     {
-    case 2:     fastForwardDCT2_B2( block, tmp, shift_1st, iHeight, 0, iSkipWidth, 0 );  break;
+    case 2:     fastForwardDCT2_B2( block, tmp, shift_1st, iHeight, 0, iSkipWidth, 0, NULL );  break;
     case 4:
       {
 #if HEVC_USE_4x4_DSTVII
@@ -310,16 +310,16 @@ void xTrMxN( const int bitDepth, const Pel *residual, size_t stride, TCoeff *coe
         else
 #endif
         {
-          fastForwardDCT2_B4( block, tmp, shift_1st, iHeight, 0, iSkipWidth, 0 );
+          fastForwardDCT2_B4( block, tmp, shift_1st, iHeight, 0, iSkipWidth, 0, NULL );
         }
       }
       break;
 
-    case 8:     fastForwardDCT2_B8  ( block, tmp, shift_1st, iHeight, 0, iSkipWidth, 0 );  break;
-    case 16:    fastForwardDCT2_B16 ( block, tmp, shift_1st, iHeight, 0, iSkipWidth, 0 );  break;
-    case 32:    fastForwardDCT2_B32 ( block, tmp, shift_1st, iHeight, 0, iSkipWidth, 0 );  break;
-    case 64:    fastForwardDCT2_B64 ( block, tmp, shift_1st + COM16_C806_TRANS_PREC, iHeight, 0, iSkipWidth, 0 );  break;
-    case 128:   fastForwardDCT2_B128( block, tmp, shift_1st + COM16_C806_TRANS_PREC, iHeight, 0, iSkipWidth, 0 );  break;
+    case 8:     fastForwardDCT2_B8  ( block, tmp, shift_1st, iHeight, 0, iSkipWidth, 0, NULL );  break;
+    case 16:    fastForwardDCT2_B16 ( block, tmp, shift_1st, iHeight, 0, iSkipWidth, 0, NULL );  break;
+    case 32:    fastForwardDCT2_B32 ( block, tmp, shift_1st, iHeight, 0, iSkipWidth, 0, NULL );  break;
+    case 64:    fastForwardDCT2_B64 ( block, tmp, shift_1st + COM16_C806_TRANS_PREC, iHeight, 0, iSkipWidth, 0, NULL );  break;
+    case 128:   fastForwardDCT2_B128( block, tmp, shift_1st + COM16_C806_TRANS_PREC, iHeight, 0, iSkipWidth, 0, NULL );  break;
     default:
       THROW( "Unsupported transformation size" ); break;
     }
@@ -328,7 +328,7 @@ void xTrMxN( const int bitDepth, const Pel *residual, size_t stride, TCoeff *coe
   {
     switch (iHeight)
     {
-    case 2:     fastForwardDCT2_B2( tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 0 );  break;
+    case 2:     fastForwardDCT2_B2( tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 0, NULL );  break;
     case 4:
       {
 #if HEVC_USE_4x4_DSTVII
@@ -339,16 +339,16 @@ void xTrMxN( const int bitDepth, const Pel *residual, size_t stride, TCoeff *coe
         else
 #endif
         {
-          fastForwardDCT2_B4( tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 0 );
+          fastForwardDCT2_B4( tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 0, NULL );
         }
       }
       break;
 
-    case 8:     fastForwardDCT2_B8  ( tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 0 );  break;
-    case 16:    fastForwardDCT2_B16 ( tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 0 );  break;
-    case 32:    fastForwardDCT2_B32 ( tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 0 );  break;
-    case 64:    fastForwardDCT2_B64 ( tmp, coeff, shift_2nd + COM16_C806_TRANS_PREC, iWidth, iSkipWidth, iSkipHeight, 0 );  break;
-    case 128:   fastForwardDCT2_B128( tmp, coeff, shift_2nd + COM16_C806_TRANS_PREC, iWidth, iSkipWidth, iSkipHeight, 0 );  break;
+    case 8:     fastForwardDCT2_B8  ( tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 0, NULL );  break;
+    case 16:    fastForwardDCT2_B16 ( tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 0, NULL );  break;
+    case 32:    fastForwardDCT2_B32 ( tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 0, NULL );  break;
+    case 64:    fastForwardDCT2_B64 ( tmp, coeff, shift_2nd + COM16_C806_TRANS_PREC, iWidth, iSkipWidth, iSkipHeight, 0, NULL );  break;
+    case 128:   fastForwardDCT2_B128( tmp, coeff, shift_2nd + COM16_C806_TRANS_PREC, iWidth, iSkipWidth, iSkipHeight, 0, NULL );  break;
     default:
       THROW( "Unsupported transformation size" ); break;
     }
@@ -394,7 +394,7 @@ void xITrMxN( const int bitDepth, const TCoeff *coeff, Pel *residual, size_t str
   {
     switch (iHeight)
     {
-    case 2: fastInverseDCT2_B2( coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum ); break;
+    case 2: fastInverseDCT2_B2( coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum, NULL ); break;
     case 4:
       {
 #if HEVC_USE_4x4_DSTVII
@@ -405,16 +405,16 @@ void xITrMxN( const int bitDepth, const TCoeff *coeff, Pel *residual, size_t str
         else
 #endif
         {
-          fastInverseDCT2_B4( coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum );
+          fastInverseDCT2_B4( coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum, NULL );
         }
       }
       break;
 
-    case   8: fastInverseDCT2_B8  ( coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum ); break;
-    case  16: fastInverseDCT2_B16 ( coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum ); break;
-    case  32: fastInverseDCT2_B32 ( coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum ); break;
-    case  64: fastInverseDCT2_B64 ( coeff, tmp, shift_1st + COM16_C806_TRANS_PREC, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum ); break;
-    case 128: fastInverseDCT2_B128( coeff, tmp, shift_1st + COM16_C806_TRANS_PREC, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum ); break;
+    case   8: fastInverseDCT2_B8  ( coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum, NULL ); break;
+    case  16: fastInverseDCT2_B16 ( coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum, NULL ); break;
+    case  32: fastInverseDCT2_B32 ( coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum, NULL ); break;
+    case  64: fastInverseDCT2_B64 ( coeff, tmp, shift_1st + COM16_C806_TRANS_PREC, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum, NULL ); break;
+    case 128: fastInverseDCT2_B128( coeff, tmp, shift_1st + COM16_C806_TRANS_PREC, iWidth, uiSkipWidth, uiSkipHeight, 0, clipMinimum, clipMaximum, NULL ); break;
     default:
       THROW( "Unsupported transformation size" ); break;
     }
@@ -423,7 +423,7 @@ void xITrMxN( const int bitDepth, const TCoeff *coeff, Pel *residual, size_t str
   {
     switch (iWidth)
     {
-    case 2: fastInverseDCT2_B2( tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max() ); break;
+    case 2: fastInverseDCT2_B2( tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max(), NULL ); break;
     // Clipping here is not in the standard, but is used to protect the "Pel" data type into which the inverse-transformed samples will be copied
     case 4:
       {
@@ -435,16 +435,16 @@ void xITrMxN( const int bitDepth, const TCoeff *coeff, Pel *residual, size_t str
         else
 #endif
         {
-          fastInverseDCT2_B4( tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max() );
+          fastInverseDCT2_B4( tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max(), NULL );
         }
       }
       break;
 
-    case   8: fastInverseDCT2_B8  ( tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max() ); break;
-    case  16: fastInverseDCT2_B16 ( tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max() ); break;
-    case  32: fastInverseDCT2_B32 ( tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max() ); break;
-    case  64: fastInverseDCT2_B64 ( tmp, block, shift_2nd + COM16_C806_TRANS_PREC, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max() ); break;
-    case 128: fastInverseDCT2_B128( tmp, block, shift_2nd + COM16_C806_TRANS_PREC, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max() ); break;
+    case   8: fastInverseDCT2_B8  ( tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max(), NULL ); break;
+    case  16: fastInverseDCT2_B16 ( tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max(), NULL ); break;
+    case  32: fastInverseDCT2_B32 ( tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max(), NULL ); break;
+    case  64: fastInverseDCT2_B64 ( tmp, block, shift_2nd + COM16_C806_TRANS_PREC, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max(), NULL ); break;
+    case 128: fastInverseDCT2_B128( tmp, block, shift_2nd + COM16_C806_TRANS_PREC, iHeight, 0, uiSkipWidth, 0, std::numeric_limits<Pel>::min(), std::numeric_limits<Pel>::max(), NULL ); break;
     default:
       THROW( "Unsupported transformation size" );
       break;
@@ -625,15 +625,17 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
 #if INTRA_KLT_MATRIX
   //const unsigned ucMode = getEmtMode(tu, compID);
   const unsigned ucTrIdx = getKltTrIdx(tu, compID);
-  const unsigned ucMode = 0;
   //if( ucTrIdx != DCT2_HEVC )
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    xTrMxN_KLT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false, m_rectTUs);
-    return;
-
     const PredictionUnit &pu = *(tu.cs->getPU(tu.blocks[compID].pos(), toChannelType(compID)));
     const UInt uiDirMode = PU::getFinalIntraMode(pu, toChannelType(compID));
+    //const UChar uhKLTIdx = g_intraDirToKLTIdx[g_intraMode65to33AngMapping[uiDirMode]];
+    const UChar uhKLTIdx = g_intraMode65to33AngMapping[uiDirMode] < 2 ? KLTPLANARDC : KLT_DEFAULT;
+    //const UChar uhKLTIdx = KLT_DEFAULT;
+    xTrMxN_KLT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, uhKLTIdx, ucTrIdx, false, m_rectTUs);
+    return;
+
     assert(0);
   }
   else
@@ -663,14 +665,18 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
 #if INTRA_KLT_MATRIX
   //const unsigned ucMode = getEmtMode(tu, compID);
   const unsigned ucTrIdx = getKltTrIdx(tu, compID);
-  const unsigned ucMode = 0;
 
   Int iSkipWidth = 0, iSkipHeight = 0;
 
   //if (ucTrIdx != DCT2_HEVC)
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
+    const PredictionUnit &pu = *(tu.cs->getPU(tu.blocks[compID].pos(), toChannelType(compID)));
+    const UInt uiDirMode = PU::getFinalIntraMode(pu, toChannelType(compID));
+    //const UChar uhKLTIdx = g_intraDirToKLTIdx[g_intraMode65to33AngMapping[uiDirMode]];
+    const UChar uhKLTIdx = g_intraMode65to33AngMapping[uiDirMode] < 2 ? KLTPLANARDC : KLT_DEFAULT;
+    //const UChar uhKLTIdx = KLT_DEFAULT;
+    xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, uhKLTIdx, ucTrIdx, false);
     return;
 
     assert(0);
