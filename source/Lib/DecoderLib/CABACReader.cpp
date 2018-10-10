@@ -1270,7 +1270,7 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
   if( split )
   {
     {
-#if !INTRA_KLT_SET_COMB
+#if INTRA_KLT_MATRIX & !INTRA_KLT_SET_COMB
       if (trDepth == 0) klt_cu_flag(cu);
 #endif
 
@@ -1429,7 +1429,7 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
 #endif
     }
 
-#if !INTRA_KLT_SET_COMB
+#if INTRA_KLT_MATRIX & !INTRA_KLT_SET_COMB
 #if HEVC_USE_RQT || ENABLE_BMS
     if (trDepth == 0) klt_cu_flag(cu);
 #else

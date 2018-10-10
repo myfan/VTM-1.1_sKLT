@@ -542,13 +542,13 @@ Void EncApp::xInitLib(Bool isFieldCoding)
  - destroy internal class
  .
  */
-#if INTRA_RESI_OUTPUT
+#if INTRA_RESI_OUTPUT | INTER_RESI_OUTPUT
 std::string statLogFileName;
 ofstream fout;
 #endif
 Void EncApp::encode()
 {
-#if INTRA_RESI_OUTPUT
+#if INTRA_RESI_OUTPUT | INTER_RESI_OUTPUT
   statLogFileName = m_bitstreamFileName;
   std::string::size_type pos = statLogFileName.find('.');
   std::string nameSuffix = statLogFileName.substr(pos + 1);

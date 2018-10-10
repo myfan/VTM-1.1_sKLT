@@ -1404,7 +1404,7 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
       }
 #endif
     }
-#if !INTRA_KLT_SET_COMB
+#if INTRA_KLT_MATRIX & !INTRA_KLT_SET_COMB
     if (trDepth == 0) klt_cu_flag(cu);
 #endif
 
@@ -1466,7 +1466,7 @@ void CABACWriter::transform_tree( const CodingStructure& cs, Partitioner& partit
       }
     }
 
-#if !INTRA_KLT_SET_COMB
+#if INTRA_KLT_MATRIX & !INTRA_KLT_SET_COMB
 #if HEVC_USE_RQT || ENABLE_BMS
     if( trDepth == 0 ) klt_cu_flag( cu );
 #else

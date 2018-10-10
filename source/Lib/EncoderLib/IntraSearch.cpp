@@ -556,7 +556,7 @@ Void IntraSearch::estIntraPredLumaQT( CodingUnit &cu, Partitioner &partitioner )
 
       }
 #if INTRA_KLT_MATRIX & INTRA_RESI_OUTPUT
-      if ( cu.kltFlag && partitioner.currArea().lwidth() == KLT_WIDTH && partitioner.currArea().lheight() == KLT_HEIGHT )
+      if ( cu.kltFlag && partitioner.currArea().lwidth() == KLT_SIZE && partitioner.currArea().lheight() == KLT_SIZE )
       {
         extern ofstream fout;
         const UnitArea&       area = partitioner.currArea();
@@ -1097,7 +1097,7 @@ Void IntraSearch::xEncSubdivCbfQT(CodingStructure &cs, Partitioner &partitioner,
 #if HEVC_USE_RQT || ENABLE_BMS
   if (subdiv)
   {
-#if !INTRA_KLT_SET_COMB
+#if INTRA_KLT_MATRIX & !INTRA_KLT_SET_COMB
     CodingUnit &currCU = *currTU.cu;
     if( currDepth == 0 && bLuma ) m_CABACEstimator->klt_cu_flag( currCU );
 #endif
@@ -1125,7 +1125,7 @@ Void IntraSearch::xEncSubdivCbfQT(CodingStructure &cs, Partitioner &partitioner,
   else
 #endif
   {
-#if !INTRA_KLT_SET_COMB
+#if INTRA_KLT_MATRIX & !INTRA_KLT_SET_COMB
 #if HEVC_USE_RQT || ENABLE_BMS
     CodingUnit &currCU = *currTU.cu;
     if( currDepth == 0 && bLuma ) m_CABACEstimator->klt_cu_flag( currCU );
@@ -1298,7 +1298,7 @@ Void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
 #if INTRA_RESI_OUTPUT
   extern std::string statLogFileName;
   extern ofstream fout;
-  if (compID == COMPONENT_Y && tu.lwidth() == KLT_WIDTH && tu.lheight() == KLT_HEIGHT)
+  if (compID == COMPONENT_Y && tu.lwidth() == KLT_SIZE && tu.lheight() == KLT_SIZE)
   {
 #if INTRA_KLT_MATRIX
     if (tu.kltIdx == 2)

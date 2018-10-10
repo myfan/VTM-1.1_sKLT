@@ -2864,6 +2864,22 @@ Void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
       SChar preCalcAlpha = 0;
       const CPelBuf lumaResi = csFull->getResiBuf(tu.Y());
 
+#if INTER_RESI_OUTPUT
+      extern std::string statLogFileName;
+      extern ofstream fout;
+      if (compID == COMPONENT_Y && tu.lwidth() == KLT_SIZE && tu.lheight() == KLT_SIZE)
+      {
+        for (int y = 0, pos = 0; y < lumaResi.height; y++, pos += lumaResi.stride)
+        {
+          for (int x = 0; x < lumaResi.width; x++)
+          {
+            fout << lumaResi.buf[pos + x] << " ";
+          }
+        }
+        fout << endl;
+      }
+#endif
+
       if (isCrossCPredictionAvailable)
       {
         csFull->getResiBuf( compArea ).copyFrom( cs.getOrgResiBuf( compArea ) );
