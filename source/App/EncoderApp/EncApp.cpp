@@ -544,6 +544,7 @@ Void EncApp::xInitLib(Bool isFieldCoding)
  */
 #if INTRA_RESI_OUTPUT
 std::string statLogFileName;
+ofstream fout;
 #endif
 Void EncApp::encode()
 {
@@ -552,6 +553,7 @@ Void EncApp::encode()
   std::string::size_type pos = statLogFileName.find('.');
   std::string nameSuffix = statLogFileName.substr(pos + 1);
   statLogFileName.replace(pos+1, nameSuffix.length(), "log");
+  fout.open(statLogFileName);
 #endif
   m_bitstream.open(m_bitstreamFileName.c_str(), fstream::binary | fstream::out);
   if (!m_bitstream)

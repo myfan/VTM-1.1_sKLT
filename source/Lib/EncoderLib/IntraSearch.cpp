@@ -555,6 +555,16 @@ Void IntraSearch::estIntraPredLumaQT( CodingUnit &cu, Partitioner &partitioner )
         uiBestPUMode  = uiOrgMode;
 
       }
+#if INTRA_KLT_MATRIX & INTRA_RESI_OUTPUT
+      if ( cu.kltFlag && partitioner.currArea().lwidth() == KLT_WIDTH && partitioner.currArea().lheight() == KLT_HEIGHT )
+      {
+        extern ofstream fout;
+        const UnitArea&       area = partitioner.currArea();
+        const TransformUnit&  tu = *csBest->getTU(area.blocks[partitioner.chType].pos(), partitioner.chType);
+        fout << (Int)tu.kltIdx << endl;
+      }
+#endif
+
 #if ENABLE_RQT_INTRA_SPEEDUP_MOD
       else if( csTemp->cost < dSecondBestPUCost )
       {
@@ -1287,20 +1297,29 @@ Void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
 
 #if INTRA_RESI_OUTPUT
   extern std::string statLogFileName;
+  extern ofstream fout;
   if (compID == COMPONENT_Y && tu.lwidth() == KLT_WIDTH && tu.lheight() == KLT_HEIGHT)
   {
-    const UInt uiDirMode = PU::getFinalIntraMode(pu, toChannelType(compID));
-    static ofstream fout(statLogFileName);
-
-    fout << (int)g_intraMode65to33AngMapping[uiDirMode] << " ";
-    for (int y = 0, pos = 0; y < piResi.height; y++, pos += piResi.stride)
+#if INTRA_KLT_MATRIX
+    if (tu.kltIdx == 2)
     {
-      for (int x = 0; x < piResi.width; x++)
+#endif
+      const UInt uiDirMode = PU::getFinalIntraMode(pu, toChannelType(compID));
+
+      fout << (int)g_intraMode65to33AngMapping[uiDirMode] << " ";
+      for (int y = 0, pos = 0; y < piResi.height; y++, pos += piResi.stride)
       {
-        fout << piResi.buf[pos + x] << " ";
+        for (int x = 0; x < piResi.width; x++)
+        {
+          fout << piResi.buf[pos + x] << " ";
+        }
       }
+#if !INTRA_KLT_MATRIX
+      fout << endl;
+#endif
+#if INTRA_KLT_MATRIX
     }
-    fout << endl;
+#endif
   }
 #endif
 
