@@ -261,7 +261,7 @@ CodingUnit& CodingUnit::operator=( const CodingUnit& other )
 #if HEVC_TILES_WPP
   tileIdx           = other.tileIdx;
 #endif
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   kltFlag           = other.kltFlag;
 #endif
 
@@ -286,7 +286,7 @@ Void CodingUnit::initData()
 #if HEVC_TILES_WPP
   tileIdx           = 0;
 #endif
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   kltFlag = 0;
 #endif
 }
@@ -444,7 +444,7 @@ Void TransformUnit::initData()
 #if HEVC_USE_RQT || ENABLE_BMS
   depth              = 0;
 #endif
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   kltIdx             = 0;
 #endif
 
@@ -483,7 +483,7 @@ TransformUnit& TransformUnit::operator=(const TransformUnit& other)
 #if HEVC_USE_RQT || ENABLE_BMS
   depth              = other.depth;
 #endif
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   kltIdx             = other.kltIdx;
 #endif
   return *this;
@@ -511,7 +511,7 @@ Void TransformUnit::copyComponentFrom(const TransformUnit& other, const Componen
 #endif
   if( isLuma( i ) )
   {
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
     kltIdx         = other.kltIdx;
 #endif
   }

@@ -1579,7 +1579,7 @@ SPSNext::SPSNext( SPS& sps )
 #if ENABLE_WPP_PARALLELISM
   , m_NextDQP                   ( false )
 #endif
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   , m_IntraKLT                  ( false )
   , m_InterKLT                  ( false )
 #endif

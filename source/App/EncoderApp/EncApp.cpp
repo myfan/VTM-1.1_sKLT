@@ -216,7 +216,7 @@ Void EncApp::xInitLibCfg()
 #if ENABLE_WPP_PARALLELISM
   m_cEncLib.setUseAltDQPCoding                                   ( m_AltDQPCoding );
 #endif
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   m_cEncLib.setIntraKLT                                          ( m_KLT & 1 );
   m_cEncLib.setInterKLT                                          ( ( m_KLT >> 1 ) & 1 );
 #endif

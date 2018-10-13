@@ -762,7 +762,7 @@ Void EncLib::xInitSPS(SPS &sps)
   sps.getSpsNext().setUseNextDQP            ( m_AltDQPCoding );
 #endif
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   sps.getSpsNext().setUseIntraKLT           ( m_IntraKLT );
   sps.getSpsNext().setUseInterKLT           ( m_InterKLT );
 #endif

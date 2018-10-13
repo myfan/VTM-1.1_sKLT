@@ -303,7 +303,7 @@ Void IntraSearch::estIntraPredLumaQT( CodingUnit &cu, Partitioner &partitioner )
 
 
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   UChar kltUsageFlag = cu.kltFlag == 1 ? 2 : 1;
 #endif
 
@@ -346,7 +346,7 @@ Void IntraSearch::estIntraPredLumaQT( CodingUnit &cu, Partitioner &partitioner )
 #endif
 
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
     if (kltUsageFlag != 2)
 #endif
     {
@@ -451,7 +451,7 @@ Void IntraSearch::estIntraPredLumaQT( CodingUnit &cu, Partitioner &partitioner )
           uiRdModeList.push_back( i );
         }
       }
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
       if( kltUsageFlag == 1 )
       {
         // Store the modes to be checked with RD
@@ -460,7 +460,7 @@ Void IntraSearch::estIntraPredLumaQT( CodingUnit &cu, Partitioner &partitioner )
       }
 #endif
     }
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
     else //emtUsage = 2 (here we potentially reduce the number of modes that will be full-RD checked)
     {
       //this is necessary because we skip the candidates list calculation, since it was already obtained for the DCT-II. Now we load it
@@ -555,7 +555,7 @@ Void IntraSearch::estIntraPredLumaQT( CodingUnit &cu, Partitioner &partitioner )
         uiBestPUMode  = uiOrgMode;
 
       }
-#if INTRA_KLT_MATRIX & INTRA_RESI_OUTPUT
+#if SEPARABLE_KLT & INTRA_RESI_OUTPUT
       if ( cu.kltFlag && partitioner.currArea().lwidth() == KLT_SIZE && partitioner.currArea().lheight() == KLT_SIZE )
       {
         extern ofstream fout;
@@ -1097,7 +1097,7 @@ Void IntraSearch::xEncSubdivCbfQT(CodingStructure &cs, Partitioner &partitioner,
 #if HEVC_USE_RQT || ENABLE_BMS
   if (subdiv)
   {
-#if INTRA_KLT_MATRIX & !INTRA_KLT_SET_COMB
+#if SEPARABLE_KLT & !INTRA_KLT_SET_COMB
     CodingUnit &currCU = *currTU.cu;
     if( currDepth == 0 && bLuma ) m_CABACEstimator->klt_cu_flag( currCU );
 #endif
@@ -1125,7 +1125,7 @@ Void IntraSearch::xEncSubdivCbfQT(CodingStructure &cs, Partitioner &partitioner,
   else
 #endif
   {
-#if INTRA_KLT_MATRIX & !INTRA_KLT_SET_COMB
+#if SEPARABLE_KLT & !INTRA_KLT_SET_COMB
 #if HEVC_USE_RQT || ENABLE_BMS
     CodingUnit &currCU = *currTU.cu;
     if( currDepth == 0 && bLuma ) m_CABACEstimator->klt_cu_flag( currCU );
@@ -1300,7 +1300,7 @@ Void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
   extern ofstream fout;
   if (compID == COMPONENT_Y && tu.lwidth() == KLT_SIZE && tu.lheight() == KLT_SIZE)
   {
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
     if (tu.kltIdx == 2)
     {
 #endif
@@ -1314,10 +1314,10 @@ Void IntraSearch::xIntraCodingTUBlock(TransformUnit &tu, const ComponentID &comp
           fout << piResi.buf[pos + x] << " ";
         }
       }
-#if !INTRA_KLT_MATRIX
+#if !SEPARABLE_KLT
       fout << endl;
 #endif
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
     }
 #endif
   }
@@ -1468,7 +1468,7 @@ Void IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
   UInt64     singleFracBits                     = 0;
   Bool       checkTransformSkip                 = pps.getUseTransformSkip();
   Int        bestModeId[MAX_NUM_COMPONENT]      = {0, 0, 0};
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   UChar      nNumKLTSets                        = INTRA_KLT_SET_COMB ? 3 : 1;
   UChar      nNumTransformCands                 = (cu.kltFlag && (currArea.lwidth() > KLTSPLIT_INTRA_MIN_CU || currArea.lheight() > KLTSPLIT_INTRA_MIN_CU)) ? nNumKLTSets : 1; //4 is the number of transforms of klt
 #else
@@ -1524,7 +1524,7 @@ Void IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
 
     checkTransformSkip &= TU::hasTransformSkipFlag( *tu.cs, tu.Y() );
     checkTransformSkip &= !cu.transQuantBypass;
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
     checkTransformSkip &= !cu.kltFlag;
 #endif
 
@@ -1578,7 +1578,7 @@ Void IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
         }
       }
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
       UChar transformIndex = cu.kltFlag ? modeId : 0;
 #endif
 
@@ -1600,7 +1600,7 @@ Void IntraSearch::xRecurIntraCodingLumaQT( CodingStructure &cs, Partitioner &par
         default0Save1Load2 = 2;
       }
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
       tu.kltIdx = transformIndex;
 #endif
 

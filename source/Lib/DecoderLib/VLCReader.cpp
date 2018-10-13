@@ -795,7 +795,7 @@ void HLSyntaxReader::parseSPSNext( SPSNext& spsNext, const bool usePCM )
   READ_FLAG( symbol,    "large_ctu_flag" );                         spsNext.setUseLargeCTU            ( symbol != 0 );
   READ_FLAG( symbol,    "disable_motion_compression_flag" );        spsNext.setDisableMotCompress     ( symbol != 0 );
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   READ_FLAG( symbol,    "klt_intra_enabled_flag" );                 spsNext.setUseIntraKLT            ( symbol != 0 );
   READ_FLAG( symbol,    "klt_inter_enabled_flag" );                 spsNext.setUseInterKLT            ( symbol != 0 );
 #endif

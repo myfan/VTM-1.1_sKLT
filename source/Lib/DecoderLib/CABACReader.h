@@ -127,7 +127,7 @@ public:
   // residual coding (clause 7.3.8.11)
   void        residual_coding           ( TransformUnit&                tu,     ComponentID     compID );
   void        transform_skip_flag       ( TransformUnit&                tu,     ComponentID     compID );
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   void        klt_cu_flag               ( CodingUnit&                   cu );
   void        klt_tu_index              ( TransformUnit&                tu );
 #endif

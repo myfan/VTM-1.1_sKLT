@@ -183,7 +183,7 @@ protected:
   unsigned  m_maxTotalCUDepth;
   unsigned  m_log2DiffMaxMinCodingBlockSize;
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   int       m_IntraKLT;
   int       m_InterKLT;
 #endif
@@ -576,7 +576,7 @@ public:
   void      setDualITree                    ( bool b )       { m_dualITree = b; }
   bool      getDualITree                    ()         const { return m_dualITree; }
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   void      setIntraKLT                     ( bool b )       { m_IntraKLT = b; }
   bool      getIntraKLT                     ()         const { return m_IntraKLT; }
   void      setInterKLT                     ( bool b )       { m_InterKLT = b; }

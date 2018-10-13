@@ -88,18 +88,18 @@
 
 #define INTRA_RESI_OUTPUT                                 0
 #define INTER_RESI_OUTPUT                                 0
-#define INTRA_KLT_MATRIX                                  1
+#define SEPARABLE_KLT                                  1
 
-#if INTER_RESI_OUTPUT & INTRA_KLT_MATRIX
+#if INTER_RESI_OUTPUT & SEPARABLE_KLT
 #error Incorrect Combination
 #endif
 
-#if INTRA_KLT_MATRIX | INTRA_RESI_OUTPUT | INTER_RESI_OUTPUT
+#if SEPARABLE_KLT | INTRA_RESI_OUTPUT | INTER_RESI_OUTPUT
 #define KLT_SIZE                                          64
 #define SEPARATE_KLT_DEBUG                                0
 #endif
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
 #define INTRA_KLT_SET_COMB                                1 // 1: combine the KLT and DCT-II matrices, 0: no combination
 #define STAT_KLT_IDX                                      0
 #endif

@@ -62,7 +62,7 @@ struct coeffGroupRDStats
   Double d64SigCost_0;
 };
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
 FwdTrans *fastFwdTrans[2][7] =
 {
   { NULL,               fastForwardKLT_B4, fastForwardKLT_B8, fastForwardKLT_B16, fastForwardKLT_B32, fastForwardKLT_B64, fastForwardKLT_B128 },
@@ -123,7 +123,7 @@ void TrQuant::copyState( const TrQuant& other )
 }
 #endif
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
 void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, Int iWidth, Int iHeight, const int maxLog2TrDynamicRange,
   const UChar ucMode, const UChar ucTrIdx, const bool use65intraModes
   , const bool useQTBT
@@ -622,7 +622,7 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
 #if HEVC_USE_4x4_DSTVII
   const bool     useDST          = TU::useDST( tu, compID );
 #endif
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   //const unsigned ucMode = getEmtMode(tu, compID);
   const unsigned ucTrIdx = getKltTrIdx(tu, compID);
   const unsigned ucMode = 0;
@@ -639,7 +639,7 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   else
 #endif
   {
-#if INTRA_KLT_MATRIX & 0
+#if SEPARABLE_KLT & 0
     CHECK(ucTrIdx != 0, "Incorrect transform index setting");
 #endif
 #if HEVC_USE_4x4_DSTVII
@@ -660,7 +660,7 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   const bool     useDST          = TU::useDST( tu, compID );
 #endif
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   //const unsigned ucMode = getEmtMode(tu, compID);
   const unsigned ucTrIdx = getKltTrIdx(tu, compID);
   const unsigned ucMode = 0;
@@ -678,7 +678,7 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   else
 #endif
   {
-#if INTRA_KLT_MATRIX & 0
+#if SEPARABLE_KLT & 0
     CHECK(ucTrIdx != 0, "Incorrect transform index setting");
 #endif
 #if HEVC_USE_4x4_DSTVII
@@ -750,7 +750,7 @@ Void TrQuant::xQuant(TransformUnit &tu, const ComponentID &compID, const CCoeffB
   m_quant->quant( tu, compID, pSrc, uiAbsSum, cQP, ctx );
 }
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
 UChar TrQuant::getKltTrIdx(TransformUnit tu, const ComponentID compID)
 {
   UChar ucTrIdx = DCT2_HEVC;

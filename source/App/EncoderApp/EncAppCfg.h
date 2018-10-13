@@ -199,7 +199,7 @@ protected:
 #if ENABLE_WPP_PARALLELISM
   bool      m_AltDQPCoding;
 #endif
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   int       m_KLT;
 #endif
   // ADD_NEW_TOOL : (encoder app) add tool enabling flags and associated parameters here

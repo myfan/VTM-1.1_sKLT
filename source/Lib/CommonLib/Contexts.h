@@ -190,7 +190,7 @@ public:
   static const CtxSet   TransquantBypassFlag;
   static const CtxSet   RdpcmFlag;
   static const CtxSet   RdpcmDir;
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   static const CtxSet   KLTCuFlag;
   static const CtxSet   KLTTuIndex;
 #endif

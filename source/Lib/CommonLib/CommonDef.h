@@ -196,7 +196,7 @@ static const Int NUM_CHROMA_MODE =                                  5; ///< tota
 static const Int DM_CHROMA_IDX =                       NUM_INTRA_MODE; ///< chroma mode index for derived from luma intra mode
 
 static const UChar INTER_MODE_IDX =                               255; ///< index for inter modes
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
 static const UInt  KLT_INTRA_MAX_CU =                              32; ///< Max Intra CU size applying KLT, supported values: 8, 16, 32, 64, 128
 static const UInt  KLT_INTER_MAX_CU =                              32; ///< Max Inter CU size applying KLT, supported values: 8, 16, 32, 64, 128
 static const UInt  KLT_INTRA_MAX_CU_WITH_QTBT =                    64; ///< Max Intra CU size applying KLT, supported values: 8, 16, 32, 64, 128

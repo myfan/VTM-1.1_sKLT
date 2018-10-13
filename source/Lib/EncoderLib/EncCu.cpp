@@ -996,7 +996,7 @@ void EncCu::xCheckRDCostIntra( CodingStructure *&tempCS, CodingStructure *&bestC
 
 
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   const SPS &sps = *tempCS->sps;
   const SizeType width = partitioner.currArea().lwidth();
   const SizeType height = partitioner.currArea().lheight();
@@ -1031,7 +1031,7 @@ void EncCu::xCheckRDCostIntra( CodingStructure *&tempCS, CodingStructure *&bestC
     cu.qp               = encTestMode.qp;
   //cu.ipcm             = false;
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
     cu.kltFlag          = kltCuFlag;
 #endif
 

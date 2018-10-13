@@ -1602,7 +1602,7 @@ void fastInverseDST7_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
   }
 }
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
 // 4x4
 void fastForwardKLT_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
 {

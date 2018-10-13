@@ -301,7 +301,7 @@ struct CodingUnit : public UnitArea
 #if HEVC_TILES_WPP
   UInt           tileIdx;
 #endif
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   UChar          kltFlag;
 #endif
 
@@ -401,7 +401,7 @@ struct TransformUnit : public UnitArea
 #if HEVC_USE_RQT || ENABLE_BMS
   UChar        depth;
 #endif
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   UChar        kltIdx;
 #endif
   UChar        cbf          [ MAX_NUM_TBLOCKS ];

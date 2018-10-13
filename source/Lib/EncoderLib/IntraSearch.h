@@ -75,7 +75,7 @@ private:
 
   CodingStructure **m_pSaveCS;
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   //cost variables for the EMT algorithm and new modes list
   Double m_bestModeCostStore[4];                                    // RD cost of the best mode for each PU using DCT2
   Double m_modeCostStore    [4][NUM_LUMA_MODE];                         // RD cost of each mode for each PU using DCT2

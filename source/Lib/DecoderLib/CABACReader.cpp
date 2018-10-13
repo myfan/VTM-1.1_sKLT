@@ -1270,7 +1270,7 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
   if( split )
   {
     {
-#if INTRA_KLT_MATRIX & !INTRA_KLT_SET_COMB
+#if SEPARABLE_KLT & !INTRA_KLT_SET_COMB
       if (trDepth == 0) klt_cu_flag(cu);
 #endif
 
@@ -1429,7 +1429,7 @@ void CABACReader::transform_tree( CodingStructure &cs, Partitioner &partitioner,
 #endif
     }
 
-#if INTRA_KLT_MATRIX & !INTRA_KLT_SET_COMB
+#if SEPARABLE_KLT & !INTRA_KLT_SET_COMB
 #if HEVC_USE_RQT || ENABLE_BMS
     if (trDepth == 0) klt_cu_flag(cu);
 #else
@@ -2265,7 +2265,7 @@ unsigned CABACReader::decode_sparse_dt( DecisionTree& dt )
   return dt.dtt.ids[offset];
 }
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
 Void CABACReader::klt_cu_flag(CodingUnit& cu)
 {
   const CodingStructure &cs = *cu.cs;

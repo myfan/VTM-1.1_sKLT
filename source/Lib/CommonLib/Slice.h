@@ -804,7 +804,7 @@ private:
 #if ENABLE_WPP_PARALLELISM
   bool              m_NextDQP;
 #endif
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   bool              m_IntraKLT;                   // 18
   bool              m_InterKLT;                   // 19
 #endif
@@ -846,7 +846,7 @@ public:
   bool      getUseNextDQP         ()                                      const     { return m_NextDQP; }
 #endif
 
-#if INTRA_KLT_MATRIX
+#if SEPARABLE_KLT
   void      setUseIntraKLT        ( bool b )                                        { m_IntraKLT = b; }
   bool      getUseIntraKLT        ()                                      const     { return m_IntraKLT; }
   void      setUseInterKLT        ( bool b )                                        { m_InterKLT = b; }
