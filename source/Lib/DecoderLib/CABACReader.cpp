@@ -2354,17 +2354,17 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
         (*tu.cu).kltFlag = 0;
       }
     }
-    DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int ) trIdx );
+    DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() intra etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int )tu.kltIdx + (*tu.cu).kltFlag);
   }
   if( !CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeKltInter ) && ( tu.cu->Y().height <= maxSizeKltInter ) )
   {
     bool uiSymbol1 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 3 ) );
     bool uiSymbol2 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 4 ) );
 
-    trIdx = ( uiSymbol2 << 1 ) | ( int ) uiSymbol1;
-
-    DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int ) trIdx );
+    tu.kltIdx = ( uiSymbol2 << 1 ) | ( int ) uiSymbol1;
+    DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() inter etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int ) trIdx );
   }
+  CHECK(tu.kltIdx < 0 || tu.kltIdx > 3, "Incorrect transform index");
 
 #if STAT_KLT_IDX
   kltIdxHist[trIdx]++;

@@ -2365,14 +2365,14 @@ Void CABACWriter::klt_tu_index( const TransformUnit& tu )
         }
       }
     }
-    DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.blocks[COMPONENT_Y].x, tu.blocks[COMPONENT_Y].y, ( int ) tu.kltIdx );
+    DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() intra etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.blocks[COMPONENT_Y].x, tu.blocks[COMPONENT_Y].y, ( int ) tu.kltIdx + (*tu.cu).kltFlag );
   }
   if( !CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeKltInter ) && ( tu.cu->Y().height <= maxSizeKltInter ) )
   {
     UChar trIdx = tu.kltIdx;
-    m_BinEncoder.encodeBin( ( trIdx & 1 ) ? 1 : 0, Ctx::KLTTuIndex( 2 ) );
-    m_BinEncoder.encodeBin( ( trIdx / 2 ) ? 1 : 0, Ctx::KLTTuIndex( 3 ) );
-    DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.blocks[COMPONENT_Y].x, tu.blocks[COMPONENT_Y].y, ( int ) tu.kltIdx );
+    m_BinEncoder.encodeBin( ( trIdx & 1 ) ? 1 : 0, Ctx::KLTTuIndex( 3 ) );
+    m_BinEncoder.encodeBin( ( trIdx / 2 ) ? 1 : 0, Ctx::KLTTuIndex( 4 ) );
+    DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() inter etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.blocks[COMPONENT_Y].x, tu.blocks[COMPONENT_Y].y, ( int ) tu.kltIdx );
   }
 }
 #endif

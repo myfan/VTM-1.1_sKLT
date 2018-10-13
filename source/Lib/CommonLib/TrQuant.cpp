@@ -140,7 +140,7 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
 
   CHECK(shift_1st < 0, "Negative shift");
   CHECK(shift_2nd < 0, "Negative shift");
-  CHECK(ucTrIdx < 0 || ucTrIdx > 2, "Incorrect transform index");
+  CHECK(ucTrIdx < 0 || ucTrIdx > 3, "Incorrect transform index");
 
   ALIGN_DATA(MEMORY_ALIGN_DEF_SIZE, TCoeff block[MAX_TU_SIZE * MAX_TU_SIZE]);
 
@@ -201,7 +201,7 @@ void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
 
   CHECK( shift_1st < 0, "Negative shift" );
   CHECK( shift_2nd < 0, "Negative shift" );
-  CHECK( ucTrIdx < 0 || ucTrIdx > 2, "Incorrect transform index" );
+  CHECK( ucTrIdx < 0 || ucTrIdx > 3, "Incorrect transform index" );
 
   TCoeff *tmp   = ( TCoeff * ) alloca( iWidth * iHeight * sizeof( TCoeff ) );
   TCoeff *block = ( TCoeff * ) alloca( iWidth * iHeight * sizeof( TCoeff ) );
@@ -668,7 +668,7 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   Int iSkipWidth = 0, iSkipHeight = 0;
 
   //if (ucTrIdx != DCT2_HEVC)
-  if (tu.cu->kltFlag && compID == COMPONENT_Y)
+  if ((tu.cu->kltFlag || CU::isInter(*tu.cu)) && compID == COMPONENT_Y)
   {
     xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
     return;
@@ -763,7 +763,7 @@ UChar TrQuant::getKltTrIdx(TransformUnit tu, const ComponentID compID)
     }
     if( !CU::isIntra( *tu.cu ) && tu.cs->sps->getSpsNext().getUseIntraKLT() )
     {
-      ucTrIdx = tu.cu->kltFlag ? tu.kltIdx : DCT2_EMT;
+      ucTrIdx = tu.kltIdx;
     }
   }
   else

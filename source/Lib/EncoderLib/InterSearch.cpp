@@ -2810,6 +2810,9 @@ Void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
 #if HEVC_USE_RQT || ENABLE_BMS
     tu.depth          = currDepth;
 #endif
+#if SEPARABLE_KLT
+    tu.kltIdx = 0;
+#endif
 
     Double minCost            [MAX_NUM_TBLOCKS];
     Bool   checkTransformSkip [MAX_NUM_TBLOCKS];
@@ -2858,6 +2861,12 @@ Void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
       }
 
       checkTransformSkip[compID] = pps.getUseTransformSkip() && TU::hasTransformSkipFlag( *tu.cs, tu.blocks[compID] ) && !cs.isLossless;
+#if SEPARABLE_KLT
+      if (isLuma(compID))
+      {
+        checkTransformSkip[compID] &= !tu.cu->kltFlag;
+      }
+#endif
 
       const Bool isCrossCPredictionAvailable = TU::hasCrossCompPredInfo( tu, compID );
 
@@ -2887,7 +2896,12 @@ Void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
       }
 
       const Int crossCPredictionModesToTest = preCalcAlpha != 0 ? 2 : 1;
+#if SEPARABLE_KLT
+      const int numKltTransformCandidates = isLuma(compID) && tu.cu->kltFlag && sps.getSpsNext().getUseInterKLT() ? 4 : 1;
+      const int numTransformCandidates = checkTransformSkip[compID] ? (numKltTransformCandidates + 1) : numKltTransformCandidates;
+#else
       const int numTransformCandidates      = checkTransformSkip[compID] ? 2 : 1;
+#endif
       int lastTransformModeIndex            = numTransformCandidates - 1; //lastTransformModeIndex is the mode for transformSkip (if transformSkip is active)
       const Bool isOneMode                  = crossCPredictionModesToTest == 1 && numTransformCandidates == 1;
 
@@ -2906,6 +2920,9 @@ Void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
           m_CABACEstimator->getCtx() = ctxStart;
           m_CABACEstimator->resetBits();
 
+#if SEPARABLE_KLT
+          if (isLuma(compID)) tu.kltIdx = transformMode;
+#endif
           tu.transformSkip[compID]  = checkTransformSkip[compID] && transformMode == lastTransformModeIndex;
           tu.compAlpha[compID]      = bUseCrossCPrediction ? preCalcAlpha : 0;
 

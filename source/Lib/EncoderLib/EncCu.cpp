@@ -1543,7 +1543,9 @@ void EncCu::xEncodeInterResidual( CodingStructure *&tempCS, CodingStructure *&be
   CodingUnit*            cu        = tempCS->getCU( partitioner.chType );
   double   bestCostInternal        = MAX_DOUBLE;
 
-
+#if SEPARABLE_KLT
+  cu->kltFlag = 1;
+#endif
   {
     cu->skip    = false;
 

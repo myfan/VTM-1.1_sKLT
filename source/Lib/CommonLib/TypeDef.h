@@ -88,7 +88,7 @@
 
 #define INTRA_RESI_OUTPUT                                 0
 #define INTER_RESI_OUTPUT                                 0
-#define SEPARABLE_KLT                                  1
+#define SEPARABLE_KLT                                     1
 
 #if INTER_RESI_OUTPUT & SEPARABLE_KLT
 #error Incorrect Combination
