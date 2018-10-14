@@ -630,11 +630,6 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
     xTrMxN_KLT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false, m_rectTUs);
-    return;
-
-    const PredictionUnit &pu = *(tu.cs->getPU(tu.blocks[compID].pos(), toChannelType(compID)));
-    const UInt uiDirMode = PU::getFinalIntraMode(pu, toChannelType(compID));
-    assert(0);
   }
   else
 #endif
@@ -668,12 +663,17 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   Int iSkipWidth = 0, iSkipHeight = 0;
 
   //if (ucTrIdx != DCT2_HEVC)
-  if ((tu.cu->kltFlag || CU::isInter(*tu.cu)) && compID == COMPONENT_Y)
+  if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
+    if (CU::isInter(*tu.cu))
+    {
+      assert(cu.cs->sps->getSpsNext().getUseInterKLT());
+    }
+    else
+    {
+      assert(cu.cs->sps->getSpsNext().getUseIntraKLT());
+    }
     xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
-    return;
-
-    assert(0);
   }
   else
 #endif
@@ -763,7 +763,7 @@ UChar TrQuant::getKltTrIdx(TransformUnit tu, const ComponentID compID)
     }
     if( !CU::isIntra( *tu.cu ) && tu.cs->sps->getSpsNext().getUseIntraKLT() )
     {
-      ucTrIdx = tu.kltIdx;
+      ucTrIdx = tu.cu->kltFlag ? tu.kltIdx : DCT2_EMT;
     }
   }
   else

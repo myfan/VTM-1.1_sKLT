@@ -2362,6 +2362,7 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
     bool uiSymbol2 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 4 ) );
 
     tu.kltIdx = ( uiSymbol2 << 1 ) | ( int ) uiSymbol1;
+    (*tu.cu).kltFlag = 1;
     DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() inter etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int ) trIdx );
   }
   CHECK(tu.kltIdx < 0 || tu.kltIdx > 3, "Incorrect transform index");

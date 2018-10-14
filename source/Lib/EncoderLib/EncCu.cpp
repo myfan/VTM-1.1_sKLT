@@ -1544,7 +1544,11 @@ void EncCu::xEncodeInterResidual( CodingStructure *&tempCS, CodingStructure *&be
   double   bestCostInternal        = MAX_DOUBLE;
 
 #if SEPARABLE_KLT
-  cu->kltFlag = 1;
+  const SPS &sps = *tempCS->sps;
+  if (sps.getSpsNext().getUseInterKLT())
+  {
+    cu->kltFlag = 1;
+  }
 #endif
   {
     cu->skip    = false;
