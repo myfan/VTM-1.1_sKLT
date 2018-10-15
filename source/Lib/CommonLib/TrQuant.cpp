@@ -667,11 +667,11 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
   {
     if (CU::isInter(*tu.cu))
     {
-      assert(cu.cs->sps->getSpsNext().getUseInterKLT());
+      assert(tu.cs->sps->getSpsNext().getUseInterKLT());
     }
     else
     {
-      assert(cu.cs->sps->getSpsNext().getUseIntraKLT());
+      assert(tu.cs->sps->getSpsNext().getUseIntraKLT());
     }
     xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
   }
