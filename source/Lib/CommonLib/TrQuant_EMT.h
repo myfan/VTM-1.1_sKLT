@@ -61,17 +61,15 @@ void fastForwardDST7_B4  (const TCoeff *src, TCoeff *dst, Int shift, Int line, I
 void fastInverseDST7_B4  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum);
 
 #if SEPARABLE_KLT
-void fastForwardKLT_B4  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use);
-void fastInverseKLT_B4  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum);
-void fastForwardKLT_B8  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use);
-void fastInverseKLT_B8  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum);
-void fastForwardKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use);
-void fastInverseKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum);
-void fastForwardKLT_B32 (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use);
-void fastInverseKLT_B32 (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum);
-void fastForwardKLT_B64 (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use);
-void fastInverseKLT_B64 (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum);
-void fastForwardKLT_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use);
-void fastInverseKLT_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum);
+void fastForwardKLT_B4  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType);
+void fastInverseKLT_B4  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum);
+void fastForwardKLT_B8  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType);
+void fastInverseKLT_B8  (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum);
+void fastForwardKLT_B16 (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType);
+void fastInverseKLT_B16 (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum);
+void fastForwardKLT_B32 (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType);
+void fastInverseKLT_B32 (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum);
+void fastForwardKLT_B64 (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType);
+void fastInverseKLT_B64 (const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum);
 #endif
 #endif // __TRQUANT__

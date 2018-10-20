@@ -65,13 +65,13 @@ struct coeffGroupRDStats
 #if SEPARABLE_KLT
 FwdTrans *fastFwdTrans[2][7] =
 {
-  { NULL,               fastForwardKLT_B4, fastForwardKLT_B8, fastForwardKLT_B16, fastForwardKLT_B32, fastForwardKLT_B64, fastForwardKLT_B128 },
+  { NULL,               fastForwardKLT_B4, fastForwardKLT_B8, fastForwardKLT_B16, fastForwardKLT_B32, fastForwardKLT_B64, NULL },
   { fastForwardDCT2_B2, fastForwardDCT2_B4, fastForwardDCT2_B8, fastForwardDCT2_B16, fastForwardDCT2_B32, fastForwardDCT2_B64, fastForwardDCT2_B128 },
 };
 
 InvTrans *fastInvTrans[2][7] =
 {
-  { NULL,               fastInverseKLT_B4, fastInverseKLT_B8, fastInverseKLT_B16, fastInverseKLT_B32, fastInverseKLT_B64, fastInverseKLT_B128 },
+  { NULL,               fastInverseKLT_B4, fastInverseKLT_B8, fastInverseKLT_B16, fastInverseKLT_B32, fastInverseKLT_B64, NULL },
   { fastInverseDCT2_B2, fastInverseDCT2_B4, fastInverseDCT2_B8, fastInverseDCT2_B16, fastInverseDCT2_B32, fastInverseDCT2_B64, fastInverseDCT2_B128 },
 };
 #endif
@@ -125,7 +125,7 @@ void TrQuant::copyState( const TrQuant& other )
 
 #if SEPARABLE_KLT
 void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *coeff, Int iWidth, Int iHeight, const int maxLog2TrDynamicRange,
-  const UChar ucMode, const UChar ucTrIdx, const bool use65intraModes
+  const PredMode pMode, const UChar ucTrIdx, const bool use65intraModes
   , const bool useQTBT
 )
 {
@@ -161,9 +161,11 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
 #endif
   }
 
+  const Int bHighPrec = 1;
+  Int iTransType = (pMode << 1) + bHighPrec;
   TCoeff *tmp = (TCoeff *)alloca(iWidth * iHeight * sizeof(TCoeff));
-  fastFwdTrans[ucTrIdx & 1][transformWidthIndex](block, tmp, shift_1st, iHeight, 0, iSkipWidth, 1);
-  fastFwdTrans[ucTrIdx >> 1][transformHeightIndex](tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, 1);
+  fastFwdTrans[ucTrIdx & 1][transformWidthIndex](block, tmp, shift_1st, iHeight, 0, iSkipWidth, iTransType);
+  fastFwdTrans[ucTrIdx >> 1][transformHeightIndex](tmp, coeff, shift_2nd, iWidth, iSkipWidth, iSkipHeight, iTransType);
 
 #if SEPARATE_KLT_DEBUG
   printf("\nCoefficient block after Row (1st) KLT:\n");
@@ -189,7 +191,7 @@ void xTrMxN_KLT(const Int bitDepth, const Pel *residual, size_t stride, TCoeff *
 #endif
 }
 
-void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, Int iWidth, Int iHeight, UInt uiSkipWidth, UInt uiSkipHeight, const Int maxLog2TrDynamicRange, UChar ucMode, UChar ucTrIdx, bool use65intraModes )
+void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t stride, Int iWidth, Int iHeight, UInt uiSkipWidth, UInt uiSkipHeight, const Int maxLog2TrDynamicRange, const PredMode pMode, UChar ucTrIdx, bool use65intraModes )
 {
   const Int TRANSFORM_MATRIX_SHIFT = g_transformMatrixShift[TRANSFORM_INVERSE];
   const TCoeff clipMinimum         = -( 1 << maxLog2TrDynamicRange );
@@ -217,8 +219,10 @@ void xITrMxN_KLT( const Int bitDepth, const TCoeff *coeff, Pel *residual, size_t
     printf("\n");
   }
 #endif
-  fastInvTrans[ucTrIdx >> 1][transformHeightIndex](coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, 1, clipMinimum, clipMaximum);
-  fastInvTrans[ucTrIdx & 1][transformWidthIndex](tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, 1, clipMinimum, clipMaximum);
+  const Int bHighPrec = 1;
+  Int iTransType = (pMode << 1) + bHighPrec;
+  fastInvTrans[ucTrIdx >> 1][transformHeightIndex](coeff, tmp, shift_1st, iWidth, uiSkipWidth, uiSkipHeight, iTransType, clipMinimum, clipMaximum);
+  fastInvTrans[ucTrIdx & 1][transformWidthIndex](tmp, block, shift_2nd, iHeight, 0, uiSkipWidth, iTransType, clipMinimum, clipMaximum);
 
 #if SEPARATE_KLT_DEBUG
   printf("\nCoefficient block after inverse Column (1st) KLT :\n");
@@ -623,13 +627,12 @@ void TrQuant::xT( const TransformUnit &tu, const ComponentID &compID, const CPel
   const bool     useDST          = TU::useDST( tu, compID );
 #endif
 #if SEPARABLE_KLT
-  //const unsigned ucMode = getEmtMode(tu, compID);
   const unsigned ucTrIdx = getKltTrIdx(tu, compID);
-  const unsigned ucMode = 0;
+  const PredMode predMode = tu.cu->predMode;
   //if( ucTrIdx != DCT2_HEVC )
   if (tu.cu->kltFlag && compID == COMPONENT_Y)
   {
-    xTrMxN_KLT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false, m_rectTUs);
+    xTrMxN_KLT(channelBitDepth, resi.buf, resi.stride, dstCoeff.buf, iWidth, iHeight, maxLog2TrDynamicRange, predMode, ucTrIdx, false, m_rectTUs);
   }
   else
 #endif
@@ -656,9 +659,8 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
 #endif
 
 #if SEPARABLE_KLT
-  //const unsigned ucMode = getEmtMode(tu, compID);
   const unsigned ucTrIdx = getKltTrIdx(tu, compID);
-  const unsigned ucMode = 0;
+  const PredMode predMode = tu.cu->predMode;
 
   Int iSkipWidth = 0, iSkipHeight = 0;
 
@@ -673,7 +675,7 @@ void TrQuant::xIT( const TransformUnit &tu, const ComponentID &compID, const CCo
     {
       assert(tu.cs->sps->getSpsNext().getUseIntraKLT());
     }
-    xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, ucMode, ucTrIdx, false);
+    xITrMxN_KLT(channelBitDepth, pCoeff.buf, pResidual.buf, pResidual.stride, pCoeff.width, pCoeff.height, iSkipWidth, iSkipHeight, maxLog2TrDynamicRange, predMode, ucTrIdx, false);
   }
   else
 #endif

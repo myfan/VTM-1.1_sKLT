@@ -139,17 +139,17 @@ extern TMatrixCoeff g_aiTr32  [NUM_TRANS_TYPE][ 32][ 32];
 extern TMatrixCoeff g_aiTr64  [NUM_TRANS_TYPE][ 64][ 64];
 extern TMatrixCoeff g_aiTr128 [NUM_TRANS_TYPE][128][128];
 
-#if SEPARABLE_KLT
-extern TMatrixCoeff g_aiKLT8[8][8];
-extern TMatrixCoeff g_aiKLT4[4][4];
-extern TMatrixCoeff g_aiKLT16[16][16];
-extern TMatrixCoeff g_aiKLT32[32][32];
-extern TMatrixCoeff g_aiKLT64[64][64];
-extern TMatrixCoeff g_aiKLT8HP[8][8];
-extern TMatrixCoeff g_aiKLT4HP[4][4];
-extern TMatrixCoeff g_aiKLT16HP[16][16];
-extern TMatrixCoeff g_aiKLT32HP[32][32];
-extern TMatrixCoeff g_aiKLT64HP[64][64];
+#if SEPARABLE_KLT // 0: inter 1: intra
+extern TMatrixCoeff g_aiKLT8[2][8][8];
+extern TMatrixCoeff g_aiKLT4[2][4][4];
+extern TMatrixCoeff g_aiKLT16[2][16][16];
+extern TMatrixCoeff g_aiKLT32[2][32][32];
+extern TMatrixCoeff g_aiKLT64[2][64][64];
+extern TMatrixCoeff g_aiKLT8HP[2][8][8];
+extern TMatrixCoeff g_aiKLT4HP[2][4][4];
+extern TMatrixCoeff g_aiKLT16HP[2][16][16];
+extern TMatrixCoeff g_aiKLT32HP[2][32][32];
+extern TMatrixCoeff g_aiKLT64HP[2][64][64];
 #endif
 
 // ====================================================================================================================

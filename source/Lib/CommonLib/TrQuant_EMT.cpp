@@ -54,7 +54,7 @@ void fastForwardDCT2_B2(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
   Int E, O;
   TCoeff add = (shift > 0) ? (1 << (shift - 1)) : 0;
 
-  const TMatrixCoeff *iT = use ? g_aiTr2[DCT2][0] : g_aiT2[TRANSFORM_FORWARD][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr2[DCT2][0] : g_aiT2[TRANSFORM_FORWARD][0];
 
   TCoeff *pCoef = dst;
   const Int  reducedLine = line - iSkipLine;
@@ -88,7 +88,7 @@ void fastInverseDCT2_B2(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
   Int E, O;
   Int add = 1 << (shift - 1);
 
-  const TMatrixCoeff *iT = use ? g_aiTr2[DCT2][0] : g_aiT2[TRANSFORM_INVERSE][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr2[DCT2][0] : g_aiT2[TRANSFORM_INVERSE][0];
 
   const Int  reducedLine = line - iSkipLine;
   for (j = 0; j<reducedLine; j++)
@@ -134,7 +134,7 @@ void fastForwardDCT2_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
   TCoeff E[2], O[2];
   TCoeff add = (shift > 0) ? (1 << (shift - 1)) : 0;
 
-  const TMatrixCoeff *iT = use ? g_aiTr4[DCT2][0] : g_aiT4[TRANSFORM_FORWARD][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr4[DCT2][0] : g_aiT4[TRANSFORM_FORWARD][0];
 
   TCoeff *pCoef = dst;
   const Int  reducedLine = line - iSkipLine;
@@ -179,7 +179,7 @@ void fastInverseDCT2_B4( const TCoeff *src, TCoeff *dst, Int shift, Int line, In
   Int E[2], O[2];
   Int add = 1 << ( shift - 1 );
 
-  const TMatrixCoeff *iT = use ? g_aiTr4[DCT2][0] : g_aiT4[TRANSFORM_INVERSE][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr4[DCT2][0] : g_aiT4[TRANSFORM_INVERSE][0];
 
   const Int  reducedLine = line - iSkipLine;
   for( j = 0; j < reducedLine; j++ )
@@ -207,7 +207,7 @@ void fastInverseDCT2_B4( const TCoeff *src, TCoeff *dst, Int shift, Int line, In
 
 
 template< Int uiTrSize >
-inline void _fastInverseMM( const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum, const TMatrixCoeff* iT )
+inline void _fastInverseMM( const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, const TCoeff outputMinimum, const TCoeff outputMaximum, const TMatrixCoeff* iT )
 {
   const int  rnd_factor  = 1 << (shift - 1);
   const int  reducedLine = line - iSkipLine;
@@ -234,7 +234,7 @@ inline void _fastInverseMM( const TCoeff *src, TCoeff *dst, Int shift, Int line,
 
 
 template< Int uiTrSize >
-inline void _fastForwardMM( const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TMatrixCoeff* tc )
+inline void _fastForwardMM( const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, const TMatrixCoeff* tc )
 {
   const int  rnd_factor  = 1 << (shift - 1);
   const int  reducedLine = line - iSkipLine;
@@ -291,7 +291,7 @@ void fastForwardDCT2_B8( const TCoeff *src, TCoeff *dst, Int shift, Int line, In
   TCoeff EE[2], EO[2];
   TCoeff add = ( shift > 0 ) ? ( 1 << ( shift - 1 ) ) : 0;
 
-  const TMatrixCoeff *iT = use ? g_aiTr8[DCT2][0] : g_aiT8[TRANSFORM_FORWARD][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr8[DCT2][0] : g_aiT8[TRANSFORM_FORWARD][0];
 
   TCoeff *pCoef = dst;
   const Int  reducedLine = line - iSkipLine;
@@ -348,7 +348,7 @@ void fastInverseDCT2_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
   Int EE[2], EO[2];
   Int add = 1 << (shift - 1);
 
-  const TMatrixCoeff *iT = use ? g_aiTr8[DCT2][0] : g_aiT8[TRANSFORM_INVERSE][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr8[DCT2][0] : g_aiT8[TRANSFORM_INVERSE][0];
 
   const Int  reducedLine = line - iSkipLine;
   for( j = 0; j < reducedLine; j++ )
@@ -399,7 +399,7 @@ void fastForwardDCT2_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, In
   TCoeff EEE[2], EEO[2];
   TCoeff add = ( shift > 0 ) ? ( 1 << ( shift - 1 ) ) : 0;
 
-  const TMatrixCoeff *iT = use ? g_aiTr16[DCT2][0] : g_aiT16[TRANSFORM_FORWARD][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr16[DCT2][0] : g_aiT16[TRANSFORM_FORWARD][0];
 
   TCoeff *pCoef = dst;
   const Int  reducedLine = line - iSkipLine;
@@ -470,7 +470,7 @@ void fastInverseDCT2_B16( const TCoeff *src, TCoeff *dst, Int shift, Int line, I
   Int EEE[2], EEO[2];
   Int add = 1 << ( shift - 1 );
 
-  const TMatrixCoeff *iT = use ? g_aiTr16[DCT2][0] : g_aiT16[TRANSFORM_INVERSE][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr16[DCT2][0] : g_aiT16[TRANSFORM_INVERSE][0];
 
   const Int  reducedLine = line - iSkipLine;
 
@@ -533,7 +533,7 @@ void fastForwardDCT2_B32( const TCoeff *src, TCoeff *dst, Int shift, Int line, I
   TCoeff EEEE[ 2], EEEO[ 2];
   TCoeff add = ( shift > 0 ) ? ( 1 << ( shift - 1 ) ) : 0;
 
-  const TMatrixCoeff *iT = use ? g_aiTr32[DCT2][0] : g_aiT32[TRANSFORM_FORWARD][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr32[DCT2][0] : g_aiT32[TRANSFORM_FORWARD][0];
 
   TCoeff *pCoef = dst;
   const Int  reducedLine = line - iSkipLine;
@@ -615,7 +615,7 @@ void fastInverseDCT2_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, In
   Int EEEE[2], EEEO[2];
   Int add = 1 << (shift - 1);
 
-  const TMatrixCoeff *iT = use ? g_aiTr32[DCT2][0] : g_aiT32[TRANSFORM_INVERSE][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr32[DCT2][0] : g_aiT32[TRANSFORM_INVERSE][0];
 
   const Int  reducedLine = line - iSkipLine;
   for (j = 0; j<reducedLine; j++)
@@ -678,7 +678,7 @@ void fastForwardDCT2_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, In
   int rnd_factor = 1 << (shift - 1);
 
   const Int uiTrSize = 64;
-  const TMatrixCoeff *iT = use ? g_aiTr64[DCT2][0] : g_aiT64[0][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr64[DCT2][0] : g_aiT64[0][0];
 
   int   j, k;
   TCoeff E[32], O[32];
@@ -783,7 +783,7 @@ void fastInverseDCT2_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, In
 {
   int rnd_factor = 1 << (shift - 1);
   const int uiTrSize = 64;
-  const TMatrixCoeff *iT = use ? g_aiTr64[DCT2][0] : g_aiT64[TRANSFORM_INVERSE][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr64[DCT2][0] : g_aiT64[TRANSFORM_INVERSE][0];
 
   int    j, k;
   TCoeff E[32], O[32];
@@ -877,7 +877,7 @@ void fastForwardDCT2_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, I
   TCoeff EEEEEE[2], EEEEEO[2];
   TCoeff add = 1 << (shift - 1);
 
-  const TMatrixCoeff(*iT)[128] = use ? g_aiTr128[DCT2] : g_aiT128[TRANSFORM_FORWARD];
+  const TMatrixCoeff(*iT)[128] = (use & 1) ? g_aiTr128[DCT2] : g_aiT128[TRANSFORM_FORWARD];
 
   TCoeff* tmp = dst;
   for (j = 0; j<line - iSkipLine; j++)
@@ -1129,7 +1129,7 @@ void fastInverseDCT2_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, I
   TCoeff EEEEEE[2], EEEEEO[2];
   TCoeff add = 1 << (shift - 1);
 
-  const TMatrixCoeff(*iT)[128] = use ? g_aiTr128[DCT2] : g_aiT128[TRANSFORM_INVERSE];
+  const TMatrixCoeff(*iT)[128] = (use & 1) ? g_aiTr128[DCT2] : g_aiT128[TRANSFORM_INVERSE];
 
   bool c1 = iSkipLine2 >= 96;
   bool c2 = iSkipLine2 >= 64;
@@ -1532,7 +1532,7 @@ void fastForwardDST7_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
   TCoeff rnd_factor = (shift > 0) ? (1 << (shift - 1)) : 0;
 
 #if HEVC_USE_4x4_DSTVII
-  const TMatrixCoeff *iT = use ? g_aiTr4[DST7][0] : g_as_DST_MAT_4[TRANSFORM_FORWARD][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr4[DST7][0] : g_as_DST_MAT_4[TRANSFORM_FORWARD][0];
 #else
   const TMatrixCoeff *iT = g_aiTr4[DST7][0];
 #endif
@@ -1574,7 +1574,7 @@ void fastInverseDST7_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
   TCoeff rnd_factor = (shift > 0) ? (1 << (shift - 1)) : 0;
 
 #if HEVC_USE_4x4_DSTVII
-  const TMatrixCoeff *iT = use ? g_aiTr4[DST7][0] : g_as_DST_MAT_4[TRANSFORM_INVERSE][0];
+  const TMatrixCoeff *iT = (use & 1) ? g_aiTr4[DST7][0] : g_as_DST_MAT_4[TRANSFORM_INVERSE][0];
 #else
   const TMatrixCoeff *iT = g_aiTr4[DST7][0];
 #endif
@@ -1604,69 +1604,78 @@ void fastInverseDST7_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
 
 #if SEPARABLE_KLT
 // 4x4
-void fastForwardKLT_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardKLT_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType)
 {
-  _fastForwardMM< 4 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT4HP[0] : g_aiKLT4[0] );
+  Int bIntra = iTransType >> 1;
+  Int bHighPrec = iTransType & 1;
+  _fastForwardMM< 4 >( src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0] );
 }
 
-void fastInverseKLT_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseKLT_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum)
 {
-  _fastInverseMM< 4 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT4HP[0] : g_aiKLT4[0] );
+  Int bIntra = iTransType >> 1;
+  Int bHighPrec = iTransType & 1;
+  _fastInverseMM< 4 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0] );
 }
 
 // 8x8
-void fastForwardKLT_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardKLT_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType)
 {
-  _fastForwardMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT8HP[0] : g_aiKLT8[0] );
+  Int bIntra = iTransType >> 1;
+  Int bHighPrec = iTransType & 1;
+  _fastForwardMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0] );
 }
 
-void fastInverseKLT_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseKLT_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum)
 {
-  _fastInverseMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT8HP[0] : g_aiKLT8[0] );
+  Int bIntra = iTransType >> 1;
+  Int bHighPrec = iTransType & 1;
+  _fastInverseMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0] );
 }
 
 // 16x16
-void fastForwardKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType)
 {
-  _fastForwardMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT16HP[0] : g_aiKLT16[0] );
+  Int bIntra = iTransType >> 1;
+  Int bHighPrec = iTransType & 1;
+  _fastForwardMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0] );
 }
 
-void fastInverseKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum)
 {
-  _fastInverseMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT16HP[0] : g_aiKLT16[0] );
+  Int bIntra = iTransType >> 1;
+  Int bHighPrec = iTransType & 1;
+  _fastInverseMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0] );
 }
 
 // 32x32
-void fastForwardKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType)
 {
-  _fastForwardMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT32HP[0] : g_aiKLT32[0] );
+  Int bIntra = iTransType >> 1;
+  Int bHighPrec = iTransType & 1;
+  _fastForwardMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0] );
 }
 
-void fastInverseKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum)
 {
-  _fastInverseMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT32HP[0] : g_aiKLT32[0] );
-}
-
-
-void fastForwardKLT_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
-{
-  _fastForwardMM< 64 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT64HP[0] : g_aiKLT64[0] );
-}
-
-void fastInverseKLT_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
-{
-  _fastInverseMM< 64 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, use ? g_aiKLT64HP[0] : g_aiKLT64[0] );
+  Int bIntra = iTransType >> 1;
+  Int bHighPrec = iTransType & 1;
+  _fastInverseMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0] );
 }
 
 
-void fastForwardKLT_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use)
+void fastForwardKLT_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType )
 {
-  _fastForwardMM< 128 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, g_aiTr128[DST7][0] );
+  Int bIntra = iTransType >> 1;
+  Int bHighPrec = iTransType & 1;
+  _fastForwardMM< 64 >( src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0] );
 }
 
-
-void fastInverseKLT_B128(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int use, const TCoeff outputMinimum, const TCoeff outputMaximum)
+void fastInverseKLT_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum)
 {
-  _fastInverseMM< 128 >( src, dst, shift, line, iSkipLine, iSkipLine2, use, outputMinimum, outputMaximum, g_aiTr128[DST7][0] );
+  Int bIntra = iTransType >> 1;
+  Int bHighPrec = iTransType & 1;
+  _fastInverseMM< 64 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0] );
 }
+
 #endif
