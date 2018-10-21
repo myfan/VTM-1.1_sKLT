@@ -555,15 +555,6 @@ Void IntraSearch::estIntraPredLumaQT( CodingUnit &cu, Partitioner &partitioner )
         uiBestPUMode  = uiOrgMode;
 
       }
-#if SEPARABLE_KLT & INTRA_RESI_OUTPUT
-      if ( cu.kltFlag && partitioner.currArea().lwidth() == KLT_SIZE && partitioner.currArea().lheight() == KLT_SIZE )
-      {
-        extern ofstream fout;
-        const UnitArea&       area = partitioner.currArea();
-        const TransformUnit&  tu = *csBest->getTU(area.blocks[partitioner.chType].pos(), partitioner.chType);
-        fout << (Int)tu.kltIdx << endl;
-      }
-#endif
 
 #if ENABLE_RQT_INTRA_SPEEDUP_MOD
       else if( csTemp->cost < dSecondBestPUCost )
@@ -575,6 +566,17 @@ Void IntraSearch::estIntraPredLumaQT( CodingUnit &cu, Partitioner &partitioner )
 
       csTemp->releaseIntermediateData();
     } // Mode loop
+
+#if SEPARABLE_KLT & INTRA_RESI_OUTPUT
+    if (cu.kltFlag && partitioner.currArea().lwidth() == KLT_SIZE && partitioner.currArea().lheight() == KLT_SIZE)
+    {
+      extern ofstream fout;
+      const UnitArea&       area = partitioner.currArea();
+      const TransformUnit&  tu = *csBest->getTU(area.blocks[partitioner.chType].pos(), partitioner.chType);
+      fout << (Int)tu.kltIdx << endl;
+    }
+#endif
+
 #if HEVC_USE_RQT
     // don't need to run full depth search - with QTBT there is only tr depth 0
     if( !cs.pcv->noRQT && pu.lwidth() > MIN_TU_SIZE )

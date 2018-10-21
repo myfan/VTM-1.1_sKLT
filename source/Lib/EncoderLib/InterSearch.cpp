@@ -2885,7 +2885,6 @@ Void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
             fout << lumaResi.buf[pos + x] << " ";
           }
         }
-        fout << endl;
       }
 #endif
 
@@ -3095,6 +3094,21 @@ Void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
         tu.copyComponentFrom( bestTU, compID );
         csFull->getResiBuf( compArea ).copyFrom( saveCS.getResiBuf( compArea ) );
       }
+#if INTER_RESI_OUTPUT
+      if (compID == COMPONENT_Y && tu.lwidth() == KLT_SIZE && tu.lheight() == KLT_SIZE)
+      {
+        extern ofstream fout;
+        const UnitArea&       area = partitioner.currArea();
+        fout << minCost[compID];
+#if SEPARABLE_KLT
+        if (tu.cu->kltFlag)
+        {
+          fout << (Int)tu.kltIdx;
+        }
+#endif
+        fout << endl;
+      }
+#endif
     } // component loop
 
     m_CABACEstimator->getCtx() = ctxStart;
