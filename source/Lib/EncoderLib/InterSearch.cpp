@@ -3099,7 +3099,7 @@ Void InterSearch::xEstimateInterResidualQT(CodingStructure &cs, Partitioner &par
       {
         extern ofstream fout;
         const UnitArea&       area = partitioner.currArea();
-        fout << minCost[compID];
+        fout << uiSingleDistComp[compID] << " " << minCost[compID];
 #if SEPARABLE_KLT
         if (tu.cu->kltFlag)
         {
