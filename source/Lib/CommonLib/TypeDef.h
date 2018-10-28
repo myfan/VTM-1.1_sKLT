@@ -87,8 +87,8 @@
 // ====================================================================================================================
 
 #define INTRA_RESI_OUTPUT                                 0
-#define INTER_RESI_OUTPUT                                 0
-#define SEPARABLE_KLT                                     1
+#define INTER_RESI_OUTPUT                                 1
+#define SEPARABLE_KLT                                     0
 
 #if SEPARABLE_KLT | INTRA_RESI_OUTPUT | INTER_RESI_OUTPUT
 #define KLT_SIZE                                          8
