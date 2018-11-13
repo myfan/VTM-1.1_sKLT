@@ -99,6 +99,8 @@
 #define SEPARATE_KLT_DEBUG                                0
 #endif
 
+#define x86_SSE_128                                       1
+#define DEBUG_GSXU										  0 // TODO: delete after debug (debug by gsxu)
 #if SEPARABLE_KLT
 #define INTRA_KLT_SET_COMB                                1 // 1: combine the KLT and DCT-II matrices, 0: no combination
 #define STAT_KLT_IDX                                      0

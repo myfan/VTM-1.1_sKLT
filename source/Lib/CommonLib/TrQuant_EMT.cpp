@@ -44,6 +44,10 @@
 #include <limits>
 #include <memory.h>
 
+#if x86_SSE_128
+#include <emmintrin.h>
+#include <smmintrin.h>
+#endif
 
 // ********************************** DCT-II **********************************
 
@@ -276,6 +280,1437 @@ inline void _fastForwardMM( const TCoeff *src, TCoeff *dst, Int shift, Int line,
   }
 }
 
+
+#if x86_SSE_128
+
+template<int HEIGHT>
+inline void _fastForwardMM_B4_10bit_sse128(const int *src, int *dst, int shift, const int line, int iSkipLine, int iSkipLine2, const short* tc)
+{
+	__m128i src_128[HEIGHT], coef_128[4];
+	__m128i tmpProduct, sum0, sum1, sum2, sum3, allSum, tmpDst;
+	__m128i factor;
+
+	factor = _mm_set1_epi32(1 << (shift - 1));
+
+	// Load source data and coefficient matrix as 32-bit unsigned int
+	for (int i = 0; i < HEIGHT; ++i) {
+		src_128[i] = _mm_loadu_si128((__m128i*)(src + i * 4));
+	}
+
+	coef_128[0] = _mm_set_epi32(tc[3], tc[2], tc[1], tc[0]);
+	coef_128[1] = _mm_set_epi32(tc[7], tc[6], tc[5], tc[4]);
+	coef_128[2] = _mm_set_epi32(tc[11], tc[10], tc[9], tc[8]);
+	coef_128[3] = _mm_set_epi32(tc[15], tc[14], tc[13], tc[12]);
+
+	int group_num = line / 4;
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < group_num; ++j) {
+			tmpProduct = _mm_mullo_epi32(src_128[4 * j + 0], coef_128[i]);
+			sum0 = _mm_add_epi32(tmpProduct, _mm_srli_si128(tmpProduct, 8));
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 4));
+
+			tmpProduct = _mm_mullo_epi32(src_128[4 * j + 1], coef_128[i]);
+			sum1 = _mm_add_epi32(tmpProduct, _mm_srli_si128(tmpProduct, 8));
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 4));
+
+			tmpProduct = _mm_mullo_epi32(src_128[4 * j + 2], coef_128[i]);
+			sum2 = _mm_add_epi32(tmpProduct, _mm_srli_si128(tmpProduct, 8));
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 4));
+
+			tmpProduct = _mm_mullo_epi32(src_128[4 * j + 3], coef_128[i]);
+			sum3 = _mm_add_epi32(tmpProduct, _mm_srli_si128(tmpProduct, 8));
+			sum3 = _mm_add_epi64(sum3, _mm_srli_si128(sum3, 4));
+
+			sum0 = _mm_unpacklo_epi32(sum0, sum1);
+			sum2 = _mm_unpacklo_epi32(sum2, sum3);
+			allSum = _mm_unpacklo_epi64(sum0, sum2);
+			tmpDst = _mm_srai_epi32(_mm_add_epi32(allSum, factor), shift);
+
+			_mm_storeu_si128((__m128i*)&dst[i * line + j * 4], tmpDst);
+		}
+	}
+}
+
+template<int WIDTH>
+inline void _fastInverseMM_B4_10bit_sse128(const int *src, int *dst, int shift, int line, int iSkipLine, int iSkipLine2, const int outputMinimum, const int outputMaximum, const short* iT) {
+	const int m128iNUM = WIDTH * 4 / 4;
+	const int WIDTH_4 = WIDTH / 4;
+	__m128i src_128[m128iNUM], coef_128[4];
+	__m128i tmpProduct, sum0, sum1, sum2, sum3, allSum, tmpDst;
+	__m128i factor, min_val, max_val;
+	__m128i tr[m128iNUM], tr_coef[4];
+
+	factor = _mm_set1_epi32(1 << (shift - 1));
+	min_val = _mm_set1_epi32(outputMinimum);
+	max_val = _mm_set1_epi32(outputMaximum);
+
+	// Load source data and coefficient matrix as 32-bit unsigned int
+	for (int i = 0; i < WIDTH; ++i) {
+		int p_s = i * 4;
+		src_128[i] = _mm_loadu_si128((__m128i*)(src + p_s));
+	}
+	for (int i = 0; i < 4; ++i) {
+		int p_s = i * 4;
+		coef_128[i] = _mm_set_epi32(iT[p_s + 3], iT[p_s + 2], iT[p_s + 1], iT[p_s + 0]);
+	}
+
+	// Transpose source matrix
+#define TRANSPOSE_Nx4_32BIT(I) \
+	for (int i = 0; i < WIDTH_4; ++i) { \
+		tr[i * 4 + 0] = _mm_unpacklo_epi32(I[i + 0], I[i + WIDTH_4 + 0]); \
+		tr[i * 4 + 1] = _mm_unpackhi_epi32(I[i + 0], I[i + WIDTH_4 + 0]); \
+		tr[i * 4 + 2] = _mm_unpacklo_epi32(I[i + 2 * WIDTH_4 + 0], I[i + 3 * WIDTH_4 + 0]); \
+		tr[i * 4 + 3] = _mm_unpackhi_epi32(I[i + 2 * WIDTH_4 + 0], I[i + 3 * WIDTH_4 + 0]); \
+	} \
+	for (int i = 0; i < WIDTH_4; ++i) { \
+		I[i * 4 + 0] = _mm_unpacklo_epi64(tr[i * 4 + 0], tr[i * 4 + 2]); \
+		I[i * 4 + 1] = _mm_unpackhi_epi64(tr[i * 4 + 0], tr[i * 4 + 2]); \
+		I[i * 4 + 2] = _mm_unpacklo_epi64(tr[i * 4 + 1], tr[i * 4 + 3]); \
+		I[i * 4 + 3] = _mm_unpackhi_epi64(tr[i * 4 + 1], tr[i * 4 + 3]); \
+	}\
+
+	TRANSPOSE_Nx4_32BIT(src_128);
+#undef TRANSPOSE_Nx4_32BIT
+
+	// Transpose coefficient matrix
+#define TRANSPOSE_4x4_32BIT(I) \
+	for (int i = 0; i < 1; ++i) { \
+		tr_coef[i * 4 + 0] = _mm_unpacklo_epi32(I[i + 0], I[i + 1 + 0]); \
+		tr_coef[i * 4 + 1] = _mm_unpackhi_epi32(I[i + 0], I[i + 1 + 0]); \
+		tr_coef[i * 4 + 2] = _mm_unpacklo_epi32(I[i + 2 * 1 + 0], I[i + 3 * 1 + 0]); \
+		tr_coef[i * 4 + 3] = _mm_unpackhi_epi32(I[i + 2 * 1 + 0], I[i + 3 * 1 + 0]); \
+	} \
+	for (int i = 0; i < 1; ++i) { \
+		I[i * 4 + 0] = _mm_unpacklo_epi64(tr_coef[i * 4 + 0], tr_coef[i * 4 + 2]); \
+		I[i * 4 + 1] = _mm_unpackhi_epi64(tr_coef[i * 4 + 0], tr_coef[i * 4 + 2]); \
+		I[i * 4 + 2] = _mm_unpacklo_epi64(tr_coef[i * 4 + 1], tr_coef[i * 4 + 3]); \
+		I[i * 4 + 3] = _mm_unpackhi_epi64(tr_coef[i * 4 + 1], tr_coef[i * 4 + 3]); \
+	}\
+
+	TRANSPOSE_4x4_32BIT(coef_128);
+#undef TRANSPOSE_4x4_32BIT
+
+	for (int i = 0; i < WIDTH; i++) {
+		tmpProduct = _mm_mullo_epi32(coef_128[0], src_128[i]);
+		sum0 = _mm_add_epi32(tmpProduct, _mm_srli_si128(tmpProduct, 8));
+		sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 4));
+
+		tmpProduct = _mm_mullo_epi32(coef_128[1], src_128[i]);
+		sum1 = _mm_add_epi32(tmpProduct, _mm_srli_si128(tmpProduct, 8));
+		sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 4));
+
+		tmpProduct = _mm_mullo_epi32(coef_128[2], src_128[i]);
+		sum2 = _mm_add_epi32(tmpProduct, _mm_srli_si128(tmpProduct, 8));
+		sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 4));
+
+		tmpProduct = _mm_mullo_epi32(coef_128[3], src_128[i]);
+		sum3 = _mm_add_epi32(tmpProduct, _mm_srli_si128(tmpProduct, 8));
+		sum3 = _mm_add_epi64(sum3, _mm_srli_si128(sum3, 4));
+
+		sum0 = _mm_unpacklo_epi32(sum0, sum1);
+		sum2 = _mm_unpacklo_epi32(sum2, sum3);
+		allSum = _mm_unpacklo_epi64(sum0, sum2);
+		tmpDst = _mm_srai_epi32(_mm_add_epi32(allSum, factor), shift);
+
+		//clip
+		tmpDst = _mm_min_epi32(tmpDst, max_val);
+		tmpDst = _mm_max_epi32(tmpDst, min_val);
+
+		_mm_storeu_si128((__m128i*)&dst[i * 4], tmpDst);
+	}
+}
+
+template<int HEIGHT>
+inline void _fastForwardMM_B8_10bit_sse128(const int *src, int *dst, int shift, int line, int iSkipLine, int iSkipLine2, const short* tc)
+{
+	__m128i src_128_0to3[HEIGHT], src_128_4to7[HEIGHT], coef_128_0to3[8], coef_128_4to7[8];
+	__m128i sum_0to3, sum_4to7, sum0, sum1, sum2, sum3, allSum, tmpDst;
+	__m128i factor;
+
+	// shift
+	factor = _mm_set1_epi32(1 << (shift - 1));
+
+	// Load source data and coefficient matrix as 32-bit unsigned int
+	for (int i = 0; i < HEIGHT; ++i) {
+		src_128_0to3[i] = _mm_loadu_si128((__m128i*)(src + i * 2 * 4));
+		src_128_4to7[i] = _mm_loadu_si128((__m128i*)(src + (i * 2 + 1) * 4));
+	}
+	coef_128_0to3[0] = _mm_set_epi32(tc[3], tc[2], tc[1], tc[0]);
+	coef_128_4to7[0] = _mm_set_epi32(tc[7], tc[6], tc[5], tc[4]);
+	coef_128_0to3[1] = _mm_set_epi32(tc[11], tc[10], tc[9], tc[8]);
+	coef_128_4to7[1] = _mm_set_epi32(tc[15], tc[14], tc[13], tc[12]);
+	coef_128_0to3[2] = _mm_set_epi32(tc[19], tc[18], tc[17], tc[16]);
+	coef_128_4to7[2] = _mm_set_epi32(tc[23], tc[22], tc[21], tc[20]);
+	coef_128_0to3[3] = _mm_set_epi32(tc[27], tc[26], tc[25], tc[24]);
+	coef_128_4to7[3] = _mm_set_epi32(tc[31], tc[30], tc[29], tc[28]);
+	coef_128_0to3[4] = _mm_set_epi32(tc[35], tc[34], tc[33], tc[32]);
+	coef_128_4to7[4] = _mm_set_epi32(tc[39], tc[38], tc[37], tc[36]);
+	coef_128_0to3[5] = _mm_set_epi32(tc[43], tc[42], tc[41], tc[40]);
+	coef_128_4to7[5] = _mm_set_epi32(tc[47], tc[46], tc[45], tc[44]);
+	coef_128_0to3[6] = _mm_set_epi32(tc[51], tc[50], tc[49], tc[48]);
+	coef_128_4to7[6] = _mm_set_epi32(tc[55], tc[54], tc[53], tc[52]);
+	coef_128_0to3[7] = _mm_set_epi32(tc[59], tc[58], tc[57], tc[56]);
+	coef_128_4to7[7] = _mm_set_epi32(tc[63], tc[62], tc[61], tc[60]);
+
+	int group_num = line / 4;
+	for (int i = 0; i < 8; i++) {
+		for (int j = 0; j < group_num; j++) {
+			// Four results
+			sum_0to3 = _mm_mullo_epi32(src_128_0to3[j * 4 + 0], coef_128_0to3[i]);
+			sum_4to7 = _mm_mullo_epi32(src_128_4to7[j * 4 + 0], coef_128_4to7[i]);
+			sum0 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 8));
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 4));
+
+			sum_0to3 = _mm_mullo_epi32(src_128_0to3[j * 4 + 1], coef_128_0to3[i]);
+			sum_4to7 = _mm_mullo_epi32(src_128_4to7[j * 4 + 1], coef_128_4to7[i]);
+			sum1 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 8));
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 4));
+
+			sum_0to3 = _mm_mullo_epi32(src_128_0to3[j * 4 + 2], coef_128_0to3[i]);
+			sum_4to7 = _mm_mullo_epi32(src_128_4to7[j * 4 + 2], coef_128_4to7[i]);
+			sum2 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 8));
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 4));
+
+			sum_0to3 = _mm_mullo_epi32(src_128_0to3[j * 4 + 3], coef_128_0to3[i]);
+			sum_4to7 = _mm_mullo_epi32(src_128_4to7[j * 4 + 3], coef_128_4to7[i]);
+			sum3 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 8));
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 4));
+
+			sum2 = _mm_unpacklo_epi32(sum2, sum3);
+			sum0 = _mm_unpacklo_epi32(sum0, sum1);
+			allSum = _mm_unpacklo_epi64(sum0, sum2);
+			tmpDst = _mm_srai_epi32(_mm_add_epi32(allSum, factor), shift);
+
+			_mm_storeu_si128((__m128i*)&dst[i * line + j * 4], tmpDst);
+		}
+	}
+}
+
+template<int WIDTH>
+inline void _fastInverseMM_B8_10bit_sse128(const int *src, int *dst, int shift, int line, int iSkipLine, int iSkipLine2, const int outputMinimum, const int outputMaximum, const short* iT) {
+	const int m128iNUM = WIDTH * 8 / 4;
+	const int WIDTH_4 = WIDTH / 4;
+	__m128i src_128[m128iNUM], coef_128[16];
+	__m128i sum_0to3, sum_4to7, sum0, sum1, sum2, sum3, allSum, tmpDst;
+	__m128i factor, min_val, max_val;
+	__m128i tr[m128iNUM], tr_coef[16];
+
+	// shift
+	factor = _mm_set1_epi32(1 << (shift - 1));
+	min_val = _mm_set1_epi32(outputMinimum);
+	max_val = _mm_set1_epi32(outputMaximum);
+
+	// Load source data and coefficient matrix as 32-bit unsigned int
+	for (int i = 0; i < m128iNUM; ++i) {
+		int p_s = i * 4;
+		src_128[i] = _mm_loadu_si128((__m128i*)(src + p_s));
+	}
+	for (int i = 0; i < 16; ++i) {
+		int p_s = i * 4;
+		coef_128[i] = _mm_set_epi32(iT[p_s + 3], iT[p_s + 2], iT[p_s + 1], iT[p_s + 0]);
+	}
+
+	// Transpose source matrix
+#define TRANSPOSE_Nx8_32BIT(I) \
+	for (int i = 0; i < m128iNUM / 8; ++i) { \
+		const int ix8 = i * 8;\
+		tr[ix8 + 0] = _mm_unpacklo_epi32(I[i + 0], I[i + WIDTH_4 + 0]); \
+		tr[ix8 + 1] = _mm_unpackhi_epi32(I[i + 0], I[i + WIDTH_4 + 0]); \
+		tr[ix8 + 2] = _mm_unpacklo_epi32(I[i + 2 * WIDTH_4 + 0], I[i + 3 * WIDTH_4 + 0]); \
+		tr[ix8 + 3] = _mm_unpackhi_epi32(I[i + 2 * WIDTH_4 + 0], I[i + 3 * WIDTH_4 + 0]); \
+		tr[ix8 + 4] = _mm_unpacklo_epi32(I[i + 4 * WIDTH_4 + 0], I[i + 5 * WIDTH_4 + 0]); \
+		tr[ix8 + 5] = _mm_unpackhi_epi32(I[i + 4 * WIDTH_4 + 0], I[i + 5 * WIDTH_4 + 0]); \
+		tr[ix8 + 6] = _mm_unpacklo_epi32(I[i + 6 * WIDTH_4 + 0], I[i + 7 * WIDTH_4 + 0]); \
+		tr[ix8 + 7] = _mm_unpackhi_epi32(I[i + 6 * WIDTH_4 + 0], I[i + 7 * WIDTH_4 + 0]); \
+	} \
+	for (int i = 0; i < m128iNUM / 8; ++i) { \
+		const int ix8 = i * 8;\
+		I[ix8 + 0] = _mm_unpacklo_epi64(tr[ix8 + 0], tr[ix8 + 2]); \
+		I[ix8 + 1] = _mm_unpacklo_epi64(tr[ix8 + 4], tr[ix8 + 6]); \
+		I[ix8 + 2] = _mm_unpackhi_epi64(tr[ix8 + 0], tr[ix8 + 2]); \
+		I[ix8 + 3] = _mm_unpackhi_epi64(tr[ix8 + 4], tr[ix8 + 6]); \
+		I[ix8 + 4] = _mm_unpacklo_epi64(tr[ix8 + 1], tr[ix8 + 3]); \
+		I[ix8 + 5] = _mm_unpacklo_epi64(tr[ix8 + 5], tr[ix8 + 7]); \
+		I[ix8 + 6] = _mm_unpackhi_epi64(tr[ix8 + 1], tr[ix8 + 3]); \
+		I[ix8 + 7] = _mm_unpackhi_epi64(tr[ix8 + 5], tr[ix8 + 7]); \
+	}\
+
+	TRANSPOSE_Nx8_32BIT(src_128);
+#undef TRANSPOSE_Nx8_32BIT
+
+	// Transpose coefficient matrix
+#define TRANSPOSE_8x8_32BIT(I) \
+	for (int i = 0; i < 2; ++i) { \
+		const int ix8 = i * 8; \
+		tr_coef[ix8 + 0] = _mm_unpacklo_epi32(I[i + 0], I[i + 2 + 0]); \
+		tr_coef[ix8 + 1] = _mm_unpackhi_epi32(I[i + 0], I[i + 2 + 0]); \
+		tr_coef[ix8 + 2] = _mm_unpacklo_epi32(I[i + 2 * 2 + 0], I[i + 3 * 2 + 0]); \
+		tr_coef[ix8 + 3] = _mm_unpackhi_epi32(I[i + 2 * 2 + 0], I[i + 3 * 2 + 0]); \
+		tr_coef[ix8 + 4] = _mm_unpacklo_epi32(I[i + 4 * 2 + 0], I[i + 5 * 2 + 0]); \
+		tr_coef[ix8 + 5] = _mm_unpackhi_epi32(I[i + 4 * 2 + 0], I[i + 5 * 2 + 0]); \
+		tr_coef[ix8 + 6] = _mm_unpacklo_epi32(I[i + 6 * 2 + 0], I[i + 7 * 2 + 0]); \
+		tr_coef[ix8 + 7] = _mm_unpackhi_epi32(I[i + 6 * 2 + 0], I[i + 7 * 2 + 0]); \
+	} \
+	for (int i = 0; i < 2; ++i) { \
+		const int ix8 = i * 8;\
+		I[ix8 + 0] = _mm_unpacklo_epi64(tr_coef[ix8 + 0], tr_coef[ix8 + 2]); \
+		I[ix8 + 1] = _mm_unpacklo_epi64(tr_coef[ix8 + 4], tr_coef[ix8 + 6]); \
+		I[ix8 + 2] = _mm_unpackhi_epi64(tr_coef[ix8 + 0], tr_coef[ix8 + 2]); \
+		I[ix8 + 3] = _mm_unpackhi_epi64(tr_coef[ix8 + 4], tr_coef[ix8 + 6]); \
+		I[ix8 + 4] = _mm_unpacklo_epi64(tr_coef[ix8 + 1], tr_coef[ix8 + 3]); \
+		I[ix8 + 5] = _mm_unpacklo_epi64(tr_coef[ix8 + 5], tr_coef[ix8 + 7]); \
+		I[ix8 + 6] = _mm_unpackhi_epi64(tr_coef[ix8 + 1], tr_coef[ix8 + 3]); \
+		I[ix8 + 7] = _mm_unpackhi_epi64(tr_coef[ix8 + 5], tr_coef[ix8 + 7]); \
+	}\
+
+	TRANSPOSE_8x8_32BIT(coef_128);
+#undef TRANSPOSE_8x8_32BIT
+
+	for (int i = 0; i < WIDTH; i++) {
+		for (int j = 0; j < 2; j++) {
+			// Four results
+			sum_0to3 = _mm_mullo_epi32(coef_128[j * 8 + 0], src_128[i * 2]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[j * 8 + 1], src_128[i * 2 + 1]);
+			sum0 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 8));
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 4));
+
+			sum_0to3 = _mm_mullo_epi32(coef_128[j * 8 + 2], src_128[i * 2]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[j * 8 + 3], src_128[i * 2 + 1]);
+			sum1 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 8));
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 4));
+
+			sum_0to3 = _mm_mullo_epi32(coef_128[j * 8 + 4], src_128[i * 2]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[j * 8 + 5], src_128[i * 2 + 1]);
+			sum2 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 8));
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 4));
+
+			sum_0to3 = _mm_mullo_epi32(coef_128[j * 8 + 6], src_128[i * 2]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[j * 8 + 7], src_128[i * 2 + 1]);
+			sum3 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 8));
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 4));
+
+			sum2 = _mm_unpacklo_epi32(sum2, sum3);
+			sum0 = _mm_unpacklo_epi32(sum0, sum1);
+			allSum = _mm_unpacklo_epi64(sum0, sum2);
+			tmpDst = _mm_srai_epi32(_mm_add_epi32(allSum, factor), shift);
+
+			//clip
+			tmpDst = _mm_min_epi32(tmpDst, max_val);
+			tmpDst = _mm_max_epi32(tmpDst, min_val);
+
+			_mm_storeu_si128((__m128i*)&dst[i * 8 + j * 4], tmpDst);
+		}
+	}
+}
+
+template<int HEIGHT>
+inline void _fastForwardMM_B16_10bit_sse128(const int *src, int *dst, int shift, int line, int iSkipLine, int iSkipLine2, const short* tc)
+{
+	__m128i src_128_0to3[HEIGHT], src_128_4to7[HEIGHT], src_128_8to11[HEIGHT], src_128_12to15[HEIGHT], coef_128_0to3[16],
+		coef_128_4to7[16], coef_128_8to11[16], coef_128_12to15[16];
+	__m128i allSum, tmpDst, sum_0to3, sum_4to7, sum_8to11, sum_12to15, sum0, sum1, sum2, sum3;
+	__m128i factor;
+
+	// shift
+	factor = _mm_set1_epi32(1 << (shift - 1));
+
+	// Load source data and coefficient matrix as 32-bit unsigned int
+	for (int i = 0; i < HEIGHT; ++i) {
+		int p_s = i * 16;
+		src_128_0to3[i] = _mm_loadu_si128((__m128i*)(src + p_s + 0));
+		src_128_4to7[i] = _mm_loadu_si128((__m128i*)(src + p_s + 4));
+		src_128_8to11[i] = _mm_loadu_si128((__m128i*)(src + p_s + 8));
+		src_128_12to15[i] = _mm_loadu_si128((__m128i*)(src + p_s + 12));
+	}
+	for (int i = 0; i < 16; ++i) {
+		int p_s = i * 16;
+		coef_128_0to3[i] = _mm_set_epi32(tc[p_s + 3], tc[p_s + 2], tc[p_s + 1], tc[p_s + 0]);
+		coef_128_4to7[i] = _mm_set_epi32(tc[p_s + 7], tc[p_s + 6], tc[p_s + 5], tc[p_s + 4]);
+		coef_128_8to11[i] = _mm_set_epi32(tc[p_s + 11], tc[p_s + 10], tc[p_s + 9], tc[p_s + 8]);
+		coef_128_12to15[i] = _mm_set_epi32(tc[p_s + 15], tc[p_s + 14], tc[p_s + 13], tc[p_s + 12]);
+	}
+
+	int group_num = line / 4;
+	for (int i = 0; i < 16; i++) {
+		for (int j = 0; j < group_num; j++) {
+			// Four results
+			// 0
+			sum_0to3 = _mm_mullo_epi32(src_128_0to3[j * 4 + 0], coef_128_0to3[i]);
+			sum_4to7 = _mm_mullo_epi32(src_128_4to7[j * 4 + 0], coef_128_4to7[i]);
+			sum_8to11 = _mm_mullo_epi32(src_128_8to11[j * 4 + 0], coef_128_8to11[i]);
+			sum_12to15 = _mm_mullo_epi32(src_128_12to15[j * 4 + 0], coef_128_12to15[i]);
+
+			sum0 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum0 = _mm_add_epi32(sum0, sum_8to11);
+			sum0 = _mm_add_epi32(sum0, sum_12to15);
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 8));
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 4));
+
+			// 1
+			sum_0to3 = _mm_mullo_epi32(src_128_0to3[j * 4 + 1], coef_128_0to3[i]);
+			sum_4to7 = _mm_mullo_epi32(src_128_4to7[j * 4 + 1], coef_128_4to7[i]);
+			sum_8to11 = _mm_mullo_epi32(src_128_8to11[j * 4 + 1], coef_128_8to11[i]);
+			sum_12to15 = _mm_mullo_epi32(src_128_12to15[j * 4 + 1], coef_128_12to15[i]);
+
+			sum1 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum1 = _mm_add_epi32(sum1, sum_8to11);
+			sum1 = _mm_add_epi32(sum1, sum_12to15);
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 8));
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 4));
+
+			// 2
+			sum_0to3 = _mm_mullo_epi32(src_128_0to3[j * 4 + 2], coef_128_0to3[i]);
+			sum_4to7 = _mm_mullo_epi32(src_128_4to7[j * 4 + 2], coef_128_4to7[i]);
+			sum_8to11 = _mm_mullo_epi32(src_128_8to11[j * 4 + 2], coef_128_8to11[i]);
+			sum_12to15 = _mm_mullo_epi32(src_128_12to15[j * 4 + 2], coef_128_12to15[i]);
+
+			sum2 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum2 = _mm_add_epi32(sum2, sum_8to11);
+			sum2 = _mm_add_epi32(sum2, sum_12to15);
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 8));
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 4));
+
+			// 3
+			sum_0to3 = _mm_mullo_epi32(src_128_0to3[j * 4 + 3], coef_128_0to3[i]);
+			sum_4to7 = _mm_mullo_epi32(src_128_4to7[j * 4 + 3], coef_128_4to7[i]);
+			sum_8to11 = _mm_mullo_epi32(src_128_8to11[j * 4 + 3], coef_128_8to11[i]);
+			sum_12to15 = _mm_mullo_epi32(src_128_12to15[j * 4 + 3], coef_128_12to15[i]);
+
+			sum3 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum3 = _mm_add_epi32(sum3, sum_8to11);
+			sum3 = _mm_add_epi32(sum3, sum_12to15);
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 8));
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 4));
+
+			// Sum mul of result 0 1 2 3
+			sum0 = _mm_unpacklo_epi32(sum0, sum1);
+			sum2 = _mm_unpacklo_epi32(sum2, sum3);
+			allSum = _mm_unpacklo_epi64(sum0, sum2);
+			tmpDst = _mm_srai_epi32(_mm_add_epi32(allSum, factor), shift);
+
+			_mm_storeu_si128((__m128i*)&dst[i * line + j * 4], tmpDst);
+		}
+	}
+}
+
+template<int WIDTH>
+inline void _fastInverseMM_B16_10bit_sse128(const int *src, int *dst, int shift, int line, int iSkipLine, int iSkipLine2, const int outputMinimum, const int outputMaximum, const short* iT) {
+	const int m128iNUM = WIDTH * 16 / 4;
+	const int WIDTH_4 = WIDTH / 4;
+	__m128i src_128[m128iNUM], coef_128[64];
+	__m128i allSum, tmpDst, sum_0to3, sum_4to7, sum_8to11, sum_12to15, sum0, sum1, sum2, sum3;
+	__m128i factor, min_val, max_val;
+	__m128i tr[m128iNUM], tr_coef[64];
+
+	// shift
+	factor = _mm_set1_epi32(1 << (shift - 1));
+	min_val = _mm_set1_epi32(outputMinimum);
+	max_val = _mm_set1_epi32(outputMaximum);
+
+	// Load source data and coefficient matrix as 32-bit unsigned int
+	for (int i = 0; i < m128iNUM; ++i) {
+		int p_s = i * 4;
+		src_128[i] = _mm_loadu_si128((__m128i*)(src + p_s));
+	}
+	for (int i = 0; i < 64; ++i) {
+		int p_s = i * 4;
+		coef_128[i] = _mm_set_epi32(iT[p_s + 3], iT[p_s + 2], iT[p_s + 1], iT[p_s + 0]);
+	}
+	int a = 0;
+	// Transpose source matrix
+#define TRANSPOSE_Nx16_32BIT(I) \
+	for (int i = 0; i < m128iNUM / 16; ++i) { \
+		const int ix16 = i * 16;\
+		tr[ix16 + 0] = _mm_unpacklo_epi32(I[i + 0], I[i + WIDTH_4]); \
+		tr[ix16 + 1] = _mm_unpackhi_epi32(I[i + 0], I[i + WIDTH_4]); \
+		tr[ix16 + 2] = _mm_unpacklo_epi32(I[i + 2 * WIDTH_4], I[i + 3 * WIDTH_4]); \
+		tr[ix16 + 3] = _mm_unpackhi_epi32(I[i + 2 * WIDTH_4], I[i + 3 * WIDTH_4]); \
+		tr[ix16 + 4] = _mm_unpacklo_epi32(I[i + 4 * WIDTH_4], I[i + 5 * WIDTH_4]); \
+		tr[ix16 + 5] = _mm_unpackhi_epi32(I[i + 4 * WIDTH_4], I[i + 5 * WIDTH_4]); \
+		tr[ix16 + 6] = _mm_unpacklo_epi32(I[i + 6 * WIDTH_4], I[i + 7 * WIDTH_4]); \
+		tr[ix16 + 7] = _mm_unpackhi_epi32(I[i + 6 * WIDTH_4], I[i + 7 * WIDTH_4]); \
+		tr[ix16 + 8] = _mm_unpacklo_epi32(I[i + 8 * WIDTH_4], I[i + 9 * WIDTH_4]); \
+		tr[ix16 + 9] = _mm_unpackhi_epi32(I[i + 8 * WIDTH_4], I[i + 9 * WIDTH_4]); \
+		tr[ix16 + 10] = _mm_unpacklo_epi32(I[i + 10 * WIDTH_4], I[i + 11 * WIDTH_4]); \
+		tr[ix16 + 11] = _mm_unpackhi_epi32(I[i + 10 * WIDTH_4], I[i + 11 * WIDTH_4]); \
+		tr[ix16 + 12] = _mm_unpacklo_epi32(I[i + 12 * WIDTH_4], I[i + 13 * WIDTH_4]); \
+		tr[ix16 + 13] = _mm_unpackhi_epi32(I[i + 12 * WIDTH_4], I[i + 13 * WIDTH_4]); \
+		tr[ix16 + 14] = _mm_unpacklo_epi32(I[i + 14 * WIDTH_4], I[i + 15 * WIDTH_4]); \
+		tr[ix16 + 15] = _mm_unpackhi_epi32(I[i + 14 * WIDTH_4], I[i + 15 * WIDTH_4]); \
+	} \
+	for (int i = 0; i < m128iNUM / 16; ++i) { \
+		const int ix16 = i * 16;\
+		I[ix16 + 0] = _mm_unpacklo_epi64(tr[ix16 + 0], tr[ix16 + 2]); \
+		I[ix16 + 1] = _mm_unpacklo_epi64(tr[ix16 + 4], tr[ix16 + 6]); \
+		I[ix16 + 2] = _mm_unpacklo_epi64(tr[ix16 + 8], tr[ix16 + 10]); \
+		I[ix16 + 3] = _mm_unpacklo_epi64(tr[ix16 + 12], tr[ix16 + 14]); \
+		I[ix16 + 4] = _mm_unpackhi_epi64(tr[ix16 + 0], tr[ix16 + 2]); \
+		I[ix16 + 5] = _mm_unpackhi_epi64(tr[ix16 + 4], tr[ix16 + 6]); \
+		I[ix16 + 6] = _mm_unpackhi_epi64(tr[ix16 + 8], tr[ix16 + 10]); \
+		I[ix16 + 7] = _mm_unpackhi_epi64(tr[ix16 + 12], tr[ix16 + 14]); \
+		I[ix16 + 8] = _mm_unpacklo_epi64(tr[ix16 + 1], tr[ix16 + 3]); \
+		I[ix16 + 9] = _mm_unpacklo_epi64(tr[ix16 + 5], tr[ix16 + 7]); \
+		I[ix16 + 10] = _mm_unpacklo_epi64(tr[ix16 + 9], tr[ix16 + 11]); \
+		I[ix16 + 11] = _mm_unpacklo_epi64(tr[ix16 + 13], tr[ix16 + 15]); \
+		I[ix16 + 12] = _mm_unpackhi_epi64(tr[ix16 + 1], tr[ix16 + 3]); \
+		I[ix16 + 13] = _mm_unpackhi_epi64(tr[ix16 + 5], tr[ix16 + 7]); \
+		I[ix16 + 14] = _mm_unpackhi_epi64(tr[ix16 + 9], tr[ix16 + 11]); \
+		I[ix16 + 15] = _mm_unpackhi_epi64(tr[ix16 + 13], tr[ix16 + 15]); \
+	}\
+
+	TRANSPOSE_Nx16_32BIT(src_128);
+#undef TRANSPOSE_Nx16_32BIT
+
+	// Transpose coefficient matrix
+#define TRANSPOSE_16x16_32BIT(I) \
+	for (int i = 0; i < 4; ++i) { \
+		const int ix8 = i * 16;\
+		tr_coef[ix8 + 0] = _mm_unpacklo_epi32(I[i + 0], I[i + 4]); \
+		tr_coef[ix8 + 1] = _mm_unpackhi_epi32(I[i + 0], I[i + 4]); \
+		tr_coef[ix8 + 2] = _mm_unpacklo_epi32(I[i + 2 * 4], I[i + 3 * 4]); \
+		tr_coef[ix8 + 3] = _mm_unpackhi_epi32(I[i + 2 * 4], I[i + 3 * 4]); \
+		tr_coef[ix8 + 4] = _mm_unpacklo_epi32(I[i + 4 * 4], I[i + 5 * 4]); \
+		tr_coef[ix8 + 5] = _mm_unpackhi_epi32(I[i + 4 * 4], I[i + 5 * 4]); \
+		tr_coef[ix8 + 6] = _mm_unpacklo_epi32(I[i + 6 * 4], I[i + 7 * 4]); \
+		tr_coef[ix8 + 7] = _mm_unpackhi_epi32(I[i + 6 * 4], I[i + 7 * 4]); \
+		tr_coef[ix8 + 8] = _mm_unpacklo_epi32(I[i + 8 * 4], I[i + 9 * 4]); \
+		tr_coef[ix8 + 9] = _mm_unpackhi_epi32(I[i + 8 * 4], I[i + 9 * 4]); \
+		tr_coef[ix8 + 10] = _mm_unpacklo_epi32(I[i + 10 * 4], I[i + 11 * 4]); \
+		tr_coef[ix8 + 11] = _mm_unpackhi_epi32(I[i + 10 * 4], I[i + 11 * 4]); \
+		tr_coef[ix8 + 12] = _mm_unpacklo_epi32(I[i + 12 * 4], I[i + 13 * 4]); \
+		tr_coef[ix8 + 13] = _mm_unpackhi_epi32(I[i + 12 * 4], I[i + 13 * 4]); \
+		tr_coef[ix8 + 14] = _mm_unpacklo_epi32(I[i + 14 * 4], I[i + 15 * 4]); \
+		tr_coef[ix8 + 15] = _mm_unpackhi_epi32(I[i + 14 * 4], I[i + 15 * 4]); \
+	} \
+	for (int i = 0; i < 4; ++i) { \
+		const int ix8 = i * 16;\
+		I[ix8 + 0] = _mm_unpacklo_epi64(tr_coef[ix8 + 0], tr_coef[ix8 + 2]); \
+		I[ix8 + 1] = _mm_unpacklo_epi64(tr_coef[ix8 + 4], tr_coef[ix8 + 6]); \
+		I[ix8 + 2] = _mm_unpacklo_epi64(tr_coef[ix8 + 8], tr_coef[ix8 + 10]); \
+		I[ix8 + 3] = _mm_unpacklo_epi64(tr_coef[ix8 + 12], tr_coef[ix8 + 14]); \
+		I[ix8 + 4] = _mm_unpackhi_epi64(tr_coef[ix8 + 0], tr_coef[ix8 + 2]); \
+		I[ix8 + 5] = _mm_unpackhi_epi64(tr_coef[ix8 + 4], tr_coef[ix8 + 6]); \
+		I[ix8 + 6] = _mm_unpackhi_epi64(tr_coef[ix8 + 8], tr_coef[ix8 + 10]); \
+		I[ix8 + 7] = _mm_unpackhi_epi64(tr_coef[ix8 + 12], tr_coef[ix8 + 14]); \
+		I[ix8 + 8] = _mm_unpacklo_epi64(tr_coef[ix8 + 1], tr_coef[ix8 + 3]); \
+		I[ix8 + 9] = _mm_unpacklo_epi64(tr_coef[ix8 + 5], tr_coef[ix8 + 7]); \
+		I[ix8 + 10] = _mm_unpacklo_epi64(tr_coef[ix8 + 9], tr_coef[ix8 + 11]); \
+		I[ix8 + 11] = _mm_unpacklo_epi64(tr_coef[ix8 + 13], tr_coef[ix8 + 15]); \
+		I[ix8 + 12] = _mm_unpackhi_epi64(tr_coef[ix8 + 1], tr_coef[ix8 + 3]); \
+		I[ix8 + 13] = _mm_unpackhi_epi64(tr_coef[ix8 + 5], tr_coef[ix8 + 7]); \
+		I[ix8 + 14] = _mm_unpackhi_epi64(tr_coef[ix8 + 9], tr_coef[ix8 + 11]); \
+		I[ix8 + 15] = _mm_unpackhi_epi64(tr_coef[ix8 + 13], tr_coef[ix8 + 15]); \
+	}\
+
+	TRANSPOSE_16x16_32BIT(coef_128);
+#undef TRANSPOSE_16x16_32BIT
+
+	for (int i = 0; i < WIDTH; i++) {
+		for (int j = 0; j < 4; j++) {
+			// Four results
+			// 0
+			sum_0to3 = _mm_mullo_epi32(coef_128[j * 16 + 0], src_128[i * 4]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[j * 16 + 1], src_128[i * 4 + 1]);
+			sum_8to11 = _mm_mullo_epi32(coef_128[j * 16 + 2], src_128[i * 4 + 2]);
+			sum_12to15 = _mm_mullo_epi32(coef_128[j * 16 + 3], src_128[i * 4 + 3]);
+
+			sum0 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum0 = _mm_add_epi32(sum0, sum_8to11);
+			sum0 = _mm_add_epi32(sum0, sum_12to15);
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 8));
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 4));
+
+			// 1
+			sum_0to3 = _mm_mullo_epi32(coef_128[j * 16 + 4], src_128[i * 4]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[j * 16 + 5], src_128[i * 4 + 1]);
+			sum_8to11 = _mm_mullo_epi32(coef_128[j * 16 + 6], src_128[i * 4 + 2]);
+			sum_12to15 = _mm_mullo_epi32(coef_128[j * 16 + 7], src_128[i * 4 + 3]);
+
+			sum1 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum1 = _mm_add_epi32(sum1, sum_8to11);
+			sum1 = _mm_add_epi32(sum1, sum_12to15);
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 8));
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 4));
+
+			// 2
+			sum_0to3 = _mm_mullo_epi32(coef_128[j * 16 + 8], src_128[i * 4]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[j * 16 + 9], src_128[i * 4 + 1]);
+			sum_8to11 = _mm_mullo_epi32(coef_128[j * 16 + 10], src_128[i * 4 + 2]);
+			sum_12to15 = _mm_mullo_epi32(coef_128[j * 16 + 11], src_128[i * 4 + 3]);
+
+			sum2 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum2 = _mm_add_epi32(sum2, sum_8to11);
+			sum2 = _mm_add_epi32(sum2, sum_12to15);
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 8));
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 4));
+
+			// 3
+			sum_0to3 = _mm_mullo_epi32(coef_128[j * 16 + 12], src_128[i * 4]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[j * 16 + 13], src_128[i * 4 + 1]);
+			sum_8to11 = _mm_mullo_epi32(coef_128[j * 16 + 14], src_128[i * 4 + 2]);
+			sum_12to15 = _mm_mullo_epi32(coef_128[j * 16 + 15], src_128[i * 4 + 3]);
+
+			sum3 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum3 = _mm_add_epi32(sum3, sum_8to11);
+			sum3 = _mm_add_epi32(sum3, sum_12to15);
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 8));
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 4));
+
+			// Sum mul of result 0 1 2 3
+			sum0 = _mm_unpacklo_epi32(sum0, sum1);
+			sum2 = _mm_unpacklo_epi32(sum2, sum3);
+			allSum = _mm_unpacklo_epi64(sum0, sum2);
+			tmpDst = _mm_srai_epi32(_mm_add_epi32(allSum, factor), shift);
+
+			//clip
+			tmpDst = _mm_min_epi32(tmpDst, max_val);
+			tmpDst = _mm_max_epi32(tmpDst, min_val);
+
+			_mm_storeu_si128((__m128i*)&dst[i * 16 + j * 4], tmpDst);
+		}
+	}
+}
+
+template<int HEIGHT>
+inline void _fastForwardMM_B32_10bit_sse128(const int *src, int *dst, int shift, int line, int iSkipLine, int iSkipLine2, const short* tc)
+{
+	__m128i src_128_0to3[HEIGHT], src_128_4to7[HEIGHT], src_128_8to11[HEIGHT], src_128_12to15[HEIGHT], src_128_16to19[HEIGHT],
+		src_128_20to23[HEIGHT], src_128_24to27[HEIGHT], src_128_28to31[HEIGHT], coef_128_0to3[32], coef_128_4to7[32],
+		coef_128_8to11[32], coef_128_12to15[32], coef_128_16to19[32], coef_128_20to23[32], coef_128_24to27[32], coef_128_28to31[32];
+	__m128i allSum, tmpDst, sum_0to3, sum_4to7, sum_8to11, sum_12to15, sum_16to19, sum_20to23, sum_24to27, sum_28to31,
+		sum0, sum1, sum2, sum3;
+	__m128i factor;
+
+	// shift
+	factor = _mm_set1_epi32(1 << (shift - 1));
+
+	// Load source data and coefficient matrix as 32-bit unsigned int
+	for (int i = 0; i < HEIGHT; ++i) {
+		int p_s = i * 32;
+		src_128_0to3[i] = _mm_loadu_si128((__m128i*)(src + p_s + 0));
+		src_128_4to7[i] = _mm_loadu_si128((__m128i*)(src + p_s + 4));
+		src_128_8to11[i] = _mm_loadu_si128((__m128i*)(src + p_s + 8));
+		src_128_12to15[i] = _mm_loadu_si128((__m128i*)(src + p_s + 12));
+		src_128_16to19[i] = _mm_loadu_si128((__m128i*)(src + p_s + 16));
+		src_128_20to23[i] = _mm_loadu_si128((__m128i*)(src + p_s + 20));
+		src_128_24to27[i] = _mm_loadu_si128((__m128i*)(src + p_s + 24));
+		src_128_28to31[i] = _mm_loadu_si128((__m128i*)(src + p_s + 28));
+	}
+	for (int i = 0; i < 32; ++i) {
+		int p_s = i * 32;
+		coef_128_0to3[i] = _mm_set_epi32(tc[p_s + 3], tc[p_s + 2], tc[p_s + 1], tc[p_s + 0]);
+		coef_128_4to7[i] = _mm_set_epi32(tc[p_s + 7], tc[p_s + 6], tc[p_s + 5], tc[p_s + 4]);
+		coef_128_8to11[i] = _mm_set_epi32(tc[p_s + 11], tc[p_s + 10], tc[p_s + 9], tc[p_s + 8]);
+		coef_128_12to15[i] = _mm_set_epi32(tc[p_s + 15], tc[p_s + 14], tc[p_s + 13], tc[p_s + 12]);
+		coef_128_16to19[i] = _mm_set_epi32(tc[p_s + 19], tc[p_s + 18], tc[p_s + 17], tc[p_s + 16]);
+		coef_128_20to23[i] = _mm_set_epi32(tc[p_s + 23], tc[p_s + 22], tc[p_s + 21], tc[p_s + 20]);
+		coef_128_24to27[i] = _mm_set_epi32(tc[p_s + 27], tc[p_s + 26], tc[p_s + 25], tc[p_s + 24]);
+		coef_128_28to31[i] = _mm_set_epi32(tc[p_s + 31], tc[p_s + 30], tc[p_s + 29], tc[p_s + 28]);
+	}
+
+	int group_num = line / 4;
+	for (int i = 0; i < 32; i++) {
+		for (int j = 0; j < group_num; j++) {
+			// Four results
+			// 0
+			sum_0to3 = _mm_mullo_epi32(src_128_0to3[j * 4 + 0], coef_128_0to3[i]);
+			sum_4to7 = _mm_mullo_epi32(src_128_4to7[j * 4 + 0], coef_128_4to7[i]);
+			sum_8to11 = _mm_mullo_epi32(src_128_8to11[j * 4 + 0], coef_128_8to11[i]);
+			sum_12to15 = _mm_mullo_epi32(src_128_12to15[j * 4 + 0], coef_128_12to15[i]);
+			sum_16to19 = _mm_mullo_epi32(src_128_16to19[j * 4 + 0], coef_128_16to19[i]);
+			sum_20to23 = _mm_mullo_epi32(src_128_20to23[j * 4 + 0], coef_128_20to23[i]);
+			sum_24to27 = _mm_mullo_epi32(src_128_24to27[j * 4 + 0], coef_128_24to27[i]);
+			sum_28to31 = _mm_mullo_epi32(src_128_28to31[j * 4 + 0], coef_128_28to31[i]);
+
+			sum0 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum0 = _mm_add_epi32(sum0, sum_8to11);
+			sum0 = _mm_add_epi32(sum0, sum_12to15);
+			sum0 = _mm_add_epi32(sum0, sum_16to19);
+			sum0 = _mm_add_epi32(sum0, sum_20to23);
+			sum0 = _mm_add_epi32(sum0, sum_24to27);
+			sum0 = _mm_add_epi32(sum0, sum_28to31);
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 8));
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 4));
+
+			// 1
+			sum_0to3 = _mm_mullo_epi32(src_128_0to3[j * 4 + 1], coef_128_0to3[i]);
+			sum_4to7 = _mm_mullo_epi32(src_128_4to7[j * 4 + 1], coef_128_4to7[i]);
+			sum_8to11 = _mm_mullo_epi32(src_128_8to11[j * 4 + 1], coef_128_8to11[i]);
+			sum_12to15 = _mm_mullo_epi32(src_128_12to15[j * 4 + 1], coef_128_12to15[i]);
+			sum_16to19 = _mm_mullo_epi32(src_128_16to19[j * 4 + 1], coef_128_16to19[i]);
+			sum_20to23 = _mm_mullo_epi32(src_128_20to23[j * 4 + 1], coef_128_20to23[i]);
+			sum_24to27 = _mm_mullo_epi32(src_128_24to27[j * 4 + 1], coef_128_24to27[i]);
+			sum_28to31 = _mm_mullo_epi32(src_128_28to31[j * 4 + 1], coef_128_28to31[i]);
+
+			sum1 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum1 = _mm_add_epi32(sum1, sum_8to11);
+			sum1 = _mm_add_epi32(sum1, sum_12to15);
+			sum1 = _mm_add_epi32(sum1, sum_16to19);
+			sum1 = _mm_add_epi32(sum1, sum_20to23);
+			sum1 = _mm_add_epi32(sum1, sum_24to27);
+			sum1 = _mm_add_epi32(sum1, sum_28to31);
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 8));
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 4));
+
+			// 2
+			sum_0to3 = _mm_mullo_epi32(src_128_0to3[j * 4 + 2], coef_128_0to3[i]);
+			sum_4to7 = _mm_mullo_epi32(src_128_4to7[j * 4 + 2], coef_128_4to7[i]);
+			sum_8to11 = _mm_mullo_epi32(src_128_8to11[j * 4 + 2], coef_128_8to11[i]);
+			sum_12to15 = _mm_mullo_epi32(src_128_12to15[j * 4 + 2], coef_128_12to15[i]);
+			sum_16to19 = _mm_mullo_epi32(src_128_16to19[j * 4 + 2], coef_128_16to19[i]);
+			sum_20to23 = _mm_mullo_epi32(src_128_20to23[j * 4 + 2], coef_128_20to23[i]);
+			sum_24to27 = _mm_mullo_epi32(src_128_24to27[j * 4 + 2], coef_128_24to27[i]);
+			sum_28to31 = _mm_mullo_epi32(src_128_28to31[j * 4 + 2], coef_128_28to31[i]);
+
+			sum2 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum2 = _mm_add_epi32(sum2, sum_8to11);
+			sum2 = _mm_add_epi32(sum2, sum_12to15);
+			sum2 = _mm_add_epi32(sum2, sum_16to19);
+			sum2 = _mm_add_epi32(sum2, sum_20to23);
+			sum2 = _mm_add_epi32(sum2, sum_24to27);
+			sum2 = _mm_add_epi32(sum2, sum_28to31);
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 8));
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 4));
+
+			// 3
+			sum_0to3 = _mm_mullo_epi32(src_128_0to3[j * 4 + 3], coef_128_0to3[i]);
+			sum_4to7 = _mm_mullo_epi32(src_128_4to7[j * 4 + 3], coef_128_4to7[i]);
+			sum_8to11 = _mm_mullo_epi32(src_128_8to11[j * 4 + 3], coef_128_8to11[i]);
+			sum_12to15 = _mm_mullo_epi32(src_128_12to15[j * 4 + 3], coef_128_12to15[i]);
+			sum_16to19 = _mm_mullo_epi32(src_128_16to19[j * 4 + 3], coef_128_16to19[i]);
+			sum_20to23 = _mm_mullo_epi32(src_128_20to23[j * 4 + 3], coef_128_20to23[i]);
+			sum_24to27 = _mm_mullo_epi32(src_128_24to27[j * 4 + 3], coef_128_24to27[i]);
+			sum_28to31 = _mm_mullo_epi32(src_128_28to31[j * 4 + 3], coef_128_28to31[i]);
+
+			sum3 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum3 = _mm_add_epi32(sum3, sum_8to11);
+			sum3 = _mm_add_epi32(sum3, sum_12to15);
+			sum3 = _mm_add_epi32(sum3, sum_16to19);
+			sum3 = _mm_add_epi32(sum3, sum_20to23);
+			sum3 = _mm_add_epi32(sum3, sum_24to27);
+			sum3 = _mm_add_epi32(sum3, sum_28to31);
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 8));
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 4));
+
+			// Sum mul of result 0 1 2 3
+			sum0 = _mm_unpacklo_epi32(sum0, sum1);
+			sum2 = _mm_unpacklo_epi32(sum2, sum3);
+			allSum = _mm_unpacklo_epi64(sum0, sum2);
+			tmpDst = _mm_srai_epi32(_mm_add_epi32(allSum, factor), shift);
+
+			_mm_storeu_si128((__m128i*)&dst[i * line + j * 4], tmpDst);
+		}
+	}
+}
+
+template<int WIDTH>
+inline void _fastInverseMM_B32_10bit_sse128(const int *src, int *dst, int shift, int line, int iSkipLine, int iSkipLine2, const int outputMinimum, const int outputMaximum, const short* iT) {
+	const int m128iNUM = WIDTH * 32 / 4;
+	const int WIDTH_4 = WIDTH / 4;
+	__m128i src_128[m128iNUM], coef_128[256];
+	__m128i allSum, tmpDst, sum_0to3, sum_4to7, sum_8to11, sum_12to15, sum_16to19, sum_20to23, sum_24to27, sum_28to31,
+		sum0, sum1, sum2, sum3;
+	__m128i factor, min_val, max_val;
+	__m128i tr[m128iNUM], tr_coef[256];
+
+	// shift
+	factor = _mm_set1_epi32(1 << (shift - 1));
+	min_val = _mm_set1_epi32(outputMinimum);
+	max_val = _mm_set1_epi32(outputMaximum);
+
+	// Load source data and coefficient matrix as 32-bit unsigned int
+	for (int i = 0; i < m128iNUM; ++i) {
+		int p_s = i * 4;
+		src_128[i] = _mm_loadu_si128((__m128i*)(src + p_s));
+	}
+	for (int i = 0; i < 256; ++i) {
+		int p_s = i * 4;
+		coef_128[i] = _mm_set_epi32(iT[p_s + 3], iT[p_s + 2], iT[p_s + 1], iT[p_s + 0]);
+	}
+
+	// Transpose coefficient matrix
+#define TRANSPOSE_Nx32_32BIT(I) \
+	for (int i = 0; i < m128iNUM / 32; ++i) { \
+		const int ix32 = i * 32;\
+		tr[ix32 + 0] = _mm_unpacklo_epi32(I[i + 0], I[i + WIDTH_4]); \
+		tr[ix32 + 1] = _mm_unpackhi_epi32(I[i + 0], I[i + WIDTH_4]); \
+		tr[ix32 + 2] = _mm_unpacklo_epi32(I[i + 2 * WIDTH_4], I[i + 3 * WIDTH_4]); \
+		tr[ix32 + 3] = _mm_unpackhi_epi32(I[i + 2 * WIDTH_4], I[i + 3 * WIDTH_4]); \
+		tr[ix32 + 4] = _mm_unpacklo_epi32(I[i + 4 * WIDTH_4], I[i + 5 * WIDTH_4]); \
+		tr[ix32 + 5] = _mm_unpackhi_epi32(I[i + 4 * WIDTH_4], I[i + 5 * WIDTH_4]); \
+		tr[ix32 + 6] = _mm_unpacklo_epi32(I[i + 6 * WIDTH_4], I[i + 7 * WIDTH_4]); \
+		tr[ix32 + 7] = _mm_unpackhi_epi32(I[i + 6 * WIDTH_4], I[i + 7 * WIDTH_4]); \
+		tr[ix32 + 8] = _mm_unpacklo_epi32(I[i + 8 * WIDTH_4], I[i + 9 * WIDTH_4]); \
+		tr[ix32 + 9] = _mm_unpackhi_epi32(I[i + 8 * WIDTH_4], I[i + 9 * WIDTH_4]); \
+		tr[ix32 + 10] = _mm_unpacklo_epi32(I[i + 10 * WIDTH_4], I[i + 11 * WIDTH_4]); \
+		tr[ix32 + 11] = _mm_unpackhi_epi32(I[i + 10 * WIDTH_4], I[i + 11 * WIDTH_4]); \
+		tr[ix32 + 12] = _mm_unpacklo_epi32(I[i + 12 * WIDTH_4], I[i + 13 * WIDTH_4]); \
+		tr[ix32 + 13] = _mm_unpackhi_epi32(I[i + 12 * WIDTH_4], I[i + 13 * WIDTH_4]); \
+		tr[ix32 + 14] = _mm_unpacklo_epi32(I[i + 14 * WIDTH_4], I[i + 15 * WIDTH_4]); \
+		tr[ix32 + 15] = _mm_unpackhi_epi32(I[i + 14 * WIDTH_4], I[i + 15 * WIDTH_4]); \
+		tr[ix32 + 16] = _mm_unpacklo_epi32(I[i + 16 * WIDTH_4], I[i + 17 * WIDTH_4]); \
+		tr[ix32 + 17] = _mm_unpackhi_epi32(I[i + 16 * WIDTH_4], I[i + 17 * WIDTH_4]); \
+		tr[ix32 + 18] = _mm_unpacklo_epi32(I[i + 18 * WIDTH_4], I[i + 19 * WIDTH_4]); \
+		tr[ix32 + 19] = _mm_unpackhi_epi32(I[i + 18 * WIDTH_4], I[i + 19 * WIDTH_4]); \
+		tr[ix32 + 20] = _mm_unpacklo_epi32(I[i + 20 * WIDTH_4], I[i + 21 * WIDTH_4]); \
+		tr[ix32 + 21] = _mm_unpackhi_epi32(I[i + 20 * WIDTH_4], I[i + 21 * WIDTH_4]); \
+		tr[ix32 + 22] = _mm_unpacklo_epi32(I[i + 22 * WIDTH_4], I[i + 23 * WIDTH_4]); \
+		tr[ix32 + 23] = _mm_unpackhi_epi32(I[i + 22 * WIDTH_4], I[i + 23 * WIDTH_4]); \
+		tr[ix32 + 24] = _mm_unpacklo_epi32(I[i + 24 * WIDTH_4], I[i + 25 * WIDTH_4]); \
+		tr[ix32 + 25] = _mm_unpackhi_epi32(I[i + 24 * WIDTH_4], I[i + 25 * WIDTH_4]); \
+		tr[ix32 + 26] = _mm_unpacklo_epi32(I[i + 26 * WIDTH_4], I[i + 27 * WIDTH_4]); \
+		tr[ix32 + 27] = _mm_unpackhi_epi32(I[i + 26 * WIDTH_4], I[i + 27 * WIDTH_4]); \
+		tr[ix32 + 28] = _mm_unpacklo_epi32(I[i + 28 * WIDTH_4], I[i + 29 * WIDTH_4]); \
+		tr[ix32 + 29] = _mm_unpackhi_epi32(I[i + 28 * WIDTH_4], I[i + 29 * WIDTH_4]); \
+		tr[ix32 + 30] = _mm_unpacklo_epi32(I[i + 30 * WIDTH_4], I[i + 31 * WIDTH_4]); \
+		tr[ix32 + 31] = _mm_unpackhi_epi32(I[i + 30 * WIDTH_4], I[i + 31 * WIDTH_4]); \
+	} \
+	for (int i = 0; i < m128iNUM / 32; ++i) { \
+		const int ix32 = i * 32;\
+		I[ix32 + 0] = _mm_unpacklo_epi64(tr[ix32 + 0], tr[ix32 + 2]); \
+		I[ix32 + 1] = _mm_unpacklo_epi64(tr[ix32 + 4], tr[ix32 + 6]); \
+		I[ix32 + 2] = _mm_unpacklo_epi64(tr[ix32 + 8], tr[ix32 + 10]); \
+		I[ix32 + 3] = _mm_unpacklo_epi64(tr[ix32 + 12], tr[ix32 + 14]); \
+		I[ix32 + 4] = _mm_unpacklo_epi64(tr[ix32 + 16], tr[ix32 + 18]); \
+		I[ix32 + 5] = _mm_unpacklo_epi64(tr[ix32 + 20], tr[ix32 + 22]); \
+		I[ix32 + 6] = _mm_unpacklo_epi64(tr[ix32 + 24], tr[ix32 + 26]); \
+		I[ix32 + 7] = _mm_unpacklo_epi64(tr[ix32 + 28], tr[ix32 + 30]); \
+		I[ix32 + 8] = _mm_unpackhi_epi64(tr[ix32 + 0], tr[ix32 + 2]); \
+		I[ix32 + 9] = _mm_unpackhi_epi64(tr[ix32 + 4], tr[ix32 + 6]); \
+		I[ix32 + 10] = _mm_unpackhi_epi64(tr[ix32 + 8], tr[ix32 + 10]); \
+		I[ix32 + 11] = _mm_unpackhi_epi64(tr[ix32 + 12], tr[ix32 + 14]); \
+		I[ix32 + 12] = _mm_unpackhi_epi64(tr[ix32 + 16], tr[ix32 + 18]); \
+		I[ix32 + 13] = _mm_unpackhi_epi64(tr[ix32 + 20], tr[ix32 + 22]); \
+		I[ix32 + 14] = _mm_unpackhi_epi64(tr[ix32 + 24], tr[ix32 + 26]); \
+		I[ix32 + 15] = _mm_unpackhi_epi64(tr[ix32 + 28], tr[ix32 + 30]); \
+		I[ix32 + 16] = _mm_unpacklo_epi64(tr[ix32 + 1], tr[ix32 + 3]); \
+		I[ix32 + 17] = _mm_unpacklo_epi64(tr[ix32 + 5], tr[ix32 + 7]); \
+		I[ix32 + 18] = _mm_unpacklo_epi64(tr[ix32 + 9], tr[ix32 + 11]); \
+		I[ix32 + 19] = _mm_unpacklo_epi64(tr[ix32 + 13], tr[ix32 + 15]); \
+		I[ix32 + 20] = _mm_unpacklo_epi64(tr[ix32 + 17], tr[ix32 + 19]); \
+		I[ix32 + 21] = _mm_unpacklo_epi64(tr[ix32 + 21], tr[ix32 + 23]); \
+		I[ix32 + 22] = _mm_unpacklo_epi64(tr[ix32 + 25], tr[ix32 + 27]); \
+		I[ix32 + 23] = _mm_unpacklo_epi64(tr[ix32 + 29], tr[ix32 + 31]); \
+		I[ix32 + 24] = _mm_unpackhi_epi64(tr[ix32 + 1], tr[ix32 + 3]); \
+		I[ix32 + 25] = _mm_unpackhi_epi64(tr[ix32 + 5], tr[ix32 + 7]); \
+		I[ix32 + 26] = _mm_unpackhi_epi64(tr[ix32 + 9], tr[ix32 + 11]); \
+		I[ix32 + 27] = _mm_unpackhi_epi64(tr[ix32 + 13], tr[ix32 + 15]); \
+		I[ix32 + 28] = _mm_unpackhi_epi64(tr[ix32 + 17], tr[ix32 + 19]); \
+		I[ix32 + 29] = _mm_unpackhi_epi64(tr[ix32 + 21], tr[ix32 + 23]); \
+		I[ix32 + 30] = _mm_unpackhi_epi64(tr[ix32 + 25], tr[ix32 + 27]); \
+		I[ix32 + 31] = _mm_unpackhi_epi64(tr[ix32 + 29], tr[ix32 + 31]); \
+	}\
+
+	TRANSPOSE_Nx32_32BIT(src_128);
+#undef TRANSPOSE_Nx32_32BIT
+
+	// Transpose coefficient matrix
+#define TRANSPOSE_32x32_32BIT(I) \
+	for (int i = 0; i < 8; ++i) { \
+		const int ix32 = i * 32;\
+		tr_coef[ix32 + 0] = _mm_unpacklo_epi32(I[i + 0], I[i + 8]); \
+		tr_coef[ix32 + 1] = _mm_unpackhi_epi32(I[i + 0], I[i + 8]); \
+		tr_coef[ix32 + 2] = _mm_unpacklo_epi32(I[i + 2 * 8], I[i + 3 * 8]); \
+		tr_coef[ix32 + 3] = _mm_unpackhi_epi32(I[i + 2 * 8], I[i + 3 * 8]); \
+		tr_coef[ix32 + 4] = _mm_unpacklo_epi32(I[i + 4 * 8], I[i + 5 * 8]); \
+		tr_coef[ix32 + 5] = _mm_unpackhi_epi32(I[i + 4 * 8], I[i + 5 * 8]); \
+		tr_coef[ix32 + 6] = _mm_unpacklo_epi32(I[i + 6 * 8], I[i + 7 * 8]); \
+		tr_coef[ix32 + 7] = _mm_unpackhi_epi32(I[i + 6 * 8], I[i + 7 * 8]); \
+		tr_coef[ix32 + 8] = _mm_unpacklo_epi32(I[i + 8 * 8], I[i + 9 * 8]); \
+		tr_coef[ix32 + 9] = _mm_unpackhi_epi32(I[i + 8 * 8], I[i + 9 * 8]); \
+		tr_coef[ix32 + 10] = _mm_unpacklo_epi32(I[i + 10 * 8], I[i + 11 * 8]); \
+		tr_coef[ix32 + 11] = _mm_unpackhi_epi32(I[i + 10 * 8], I[i + 11 * 8]); \
+		tr_coef[ix32 + 12] = _mm_unpacklo_epi32(I[i + 12 * 8], I[i + 13 * 8]); \
+		tr_coef[ix32 + 13] = _mm_unpackhi_epi32(I[i + 12 * 8], I[i + 13 * 8]); \
+		tr_coef[ix32 + 14] = _mm_unpacklo_epi32(I[i + 14 * 8], I[i + 15 * 8]); \
+		tr_coef[ix32 + 15] = _mm_unpackhi_epi32(I[i + 14 * 8], I[i + 15 * 8]); \
+		tr_coef[ix32 + 16] = _mm_unpacklo_epi32(I[i + 16 * 8], I[i + 17 * 8]); \
+		tr_coef[ix32 + 17] = _mm_unpackhi_epi32(I[i + 16 * 8], I[i + 17 * 8]); \
+		tr_coef[ix32 + 18] = _mm_unpacklo_epi32(I[i + 18 * 8], I[i + 19 * 8]); \
+		tr_coef[ix32 + 19] = _mm_unpackhi_epi32(I[i + 18 * 8], I[i + 19 * 8]); \
+		tr_coef[ix32 + 20] = _mm_unpacklo_epi32(I[i + 20 * 8], I[i + 21 * 8]); \
+		tr_coef[ix32 + 21] = _mm_unpackhi_epi32(I[i + 20 * 8], I[i + 21 * 8]); \
+		tr_coef[ix32 + 22] = _mm_unpacklo_epi32(I[i + 22 * 8], I[i + 23 * 8]); \
+		tr_coef[ix32 + 23] = _mm_unpackhi_epi32(I[i + 22 * 8], I[i + 23 * 8]); \
+		tr_coef[ix32 + 24] = _mm_unpacklo_epi32(I[i + 24 * 8], I[i + 25 * 8]); \
+		tr_coef[ix32 + 25] = _mm_unpackhi_epi32(I[i + 24 * 8], I[i + 25 * 8]); \
+		tr_coef[ix32 + 26] = _mm_unpacklo_epi32(I[i + 26 * 8], I[i + 27 * 8]); \
+		tr_coef[ix32 + 27] = _mm_unpackhi_epi32(I[i + 26 * 8], I[i + 27 * 8]); \
+		tr_coef[ix32 + 28] = _mm_unpacklo_epi32(I[i + 28 * 8], I[i + 29 * 8]); \
+		tr_coef[ix32 + 29] = _mm_unpackhi_epi32(I[i + 28 * 8], I[i + 29 * 8]); \
+		tr_coef[ix32 + 30] = _mm_unpacklo_epi32(I[i + 30 * 8], I[i + 31 * 8]); \
+		tr_coef[ix32 + 31] = _mm_unpackhi_epi32(I[i + 30 * 8], I[i + 31 * 8]); \
+	} \
+	for (int i = 0; i < 8; ++i) { \
+		const int ix32 = i * 32;\
+		I[ix32 + 0] = _mm_unpacklo_epi64(tr_coef[ix32 + 0], tr_coef[ix32 + 2]); \
+		I[ix32 + 1] = _mm_unpacklo_epi64(tr_coef[ix32 + 4], tr_coef[ix32 + 6]); \
+		I[ix32 + 2] = _mm_unpacklo_epi64(tr_coef[ix32 + 8], tr_coef[ix32 + 10]); \
+		I[ix32 + 3] = _mm_unpacklo_epi64(tr_coef[ix32 + 12], tr_coef[ix32 + 14]); \
+		I[ix32 + 4] = _mm_unpacklo_epi64(tr_coef[ix32 + 16], tr_coef[ix32 + 18]); \
+		I[ix32 + 5] = _mm_unpacklo_epi64(tr_coef[ix32 + 20], tr_coef[ix32 + 22]); \
+		I[ix32 + 6] = _mm_unpacklo_epi64(tr_coef[ix32 + 24], tr_coef[ix32 + 26]); \
+		I[ix32 + 7] = _mm_unpacklo_epi64(tr_coef[ix32 + 28], tr_coef[ix32 + 30]); \
+		I[ix32 + 8] = _mm_unpackhi_epi64(tr_coef[ix32 + 0], tr_coef[ix32 + 2]); \
+		I[ix32 + 9] = _mm_unpackhi_epi64(tr_coef[ix32 + 4], tr_coef[ix32 + 6]); \
+		I[ix32 + 10] = _mm_unpackhi_epi64(tr_coef[ix32 + 8], tr_coef[ix32 + 10]); \
+		I[ix32 + 11] = _mm_unpackhi_epi64(tr_coef[ix32 + 12], tr_coef[ix32 + 14]); \
+		I[ix32 + 12] = _mm_unpackhi_epi64(tr_coef[ix32 + 16], tr_coef[ix32 + 18]); \
+		I[ix32 + 13] = _mm_unpackhi_epi64(tr_coef[ix32 + 20], tr_coef[ix32 + 22]); \
+		I[ix32 + 14] = _mm_unpackhi_epi64(tr_coef[ix32 + 24], tr_coef[ix32 + 26]); \
+		I[ix32 + 15] = _mm_unpackhi_epi64(tr_coef[ix32 + 28], tr_coef[ix32 + 30]); \
+		I[ix32 + 16] = _mm_unpacklo_epi64(tr_coef[ix32 + 1], tr_coef[ix32 + 3]); \
+		I[ix32 + 17] = _mm_unpacklo_epi64(tr_coef[ix32 + 5], tr_coef[ix32 + 7]); \
+		I[ix32 + 18] = _mm_unpacklo_epi64(tr_coef[ix32 + 9], tr_coef[ix32 + 11]); \
+		I[ix32 + 19] = _mm_unpacklo_epi64(tr_coef[ix32 + 13], tr_coef[ix32 + 15]); \
+		I[ix32 + 20] = _mm_unpacklo_epi64(tr_coef[ix32 + 17], tr_coef[ix32 + 19]); \
+		I[ix32 + 21] = _mm_unpacklo_epi64(tr_coef[ix32 + 21], tr_coef[ix32 + 23]); \
+		I[ix32 + 22] = _mm_unpacklo_epi64(tr_coef[ix32 + 25], tr_coef[ix32 + 27]); \
+		I[ix32 + 23] = _mm_unpacklo_epi64(tr_coef[ix32 + 29], tr_coef[ix32 + 31]); \
+		I[ix32 + 24] = _mm_unpackhi_epi64(tr_coef[ix32 + 1], tr_coef[ix32 + 3]); \
+		I[ix32 + 25] = _mm_unpackhi_epi64(tr_coef[ix32 + 5], tr_coef[ix32 + 7]); \
+		I[ix32 + 26] = _mm_unpackhi_epi64(tr_coef[ix32 + 9], tr_coef[ix32 + 11]); \
+		I[ix32 + 27] = _mm_unpackhi_epi64(tr_coef[ix32 + 13], tr_coef[ix32 + 15]); \
+		I[ix32 + 28] = _mm_unpackhi_epi64(tr_coef[ix32 + 17], tr_coef[ix32 + 19]); \
+		I[ix32 + 29] = _mm_unpackhi_epi64(tr_coef[ix32 + 21], tr_coef[ix32 + 23]); \
+		I[ix32 + 30] = _mm_unpackhi_epi64(tr_coef[ix32 + 25], tr_coef[ix32 + 27]); \
+		I[ix32 + 31] = _mm_unpackhi_epi64(tr_coef[ix32 + 29], tr_coef[ix32 + 31]); \
+	}\
+
+	TRANSPOSE_32x32_32BIT(coef_128);
+#undef TRANSPOSE_32x32_32BIT
+
+	int a = 0;
+
+	for (int i = 0; i < WIDTH; i++) {
+		for (int j = 0; j < 8; j++) {
+			// Four results
+			// 0
+			sum_0to3 = _mm_mullo_epi32(coef_128[j * 32 + 0], src_128[i * 8]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[j * 32 + 1], src_128[i * 8 + 1]);
+			sum_8to11 = _mm_mullo_epi32(coef_128[j * 32 + 2], src_128[i * 8 + 2]);
+			sum_12to15 = _mm_mullo_epi32(coef_128[j * 32 + 3], src_128[i * 8 + 3]);
+			sum_16to19 = _mm_mullo_epi32(coef_128[j * 32 + 4], src_128[i * 8 + 4]);
+			sum_20to23 = _mm_mullo_epi32(coef_128[j * 32 + 5], src_128[i * 8 + 5]);
+			sum_24to27 = _mm_mullo_epi32(coef_128[j * 32 + 6], src_128[i * 8 + 6]);
+			sum_28to31 = _mm_mullo_epi32(coef_128[j * 32 + 7], src_128[i * 8 + 7]);
+
+			sum0 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum0 = _mm_add_epi32(sum0, sum_8to11);
+			sum0 = _mm_add_epi32(sum0, sum_12to15);
+			sum0 = _mm_add_epi32(sum0, sum_16to19);
+			sum0 = _mm_add_epi32(sum0, sum_20to23);
+			sum0 = _mm_add_epi32(sum0, sum_24to27);
+			sum0 = _mm_add_epi32(sum0, sum_28to31);
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 8));
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 4));
+
+			// 1
+			sum_0to3 = _mm_mullo_epi32(coef_128[j * 32 + 8], src_128[i * 8]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[j * 32 + 9], src_128[i * 8 + 1]);
+			sum_8to11 = _mm_mullo_epi32(coef_128[j * 32 + 10], src_128[i * 8 + 2]);
+			sum_12to15 = _mm_mullo_epi32(coef_128[j * 32 + 11], src_128[i * 8 + 3]);
+			sum_16to19 = _mm_mullo_epi32(coef_128[j * 32 + 12], src_128[i * 8 + 4]);
+			sum_20to23 = _mm_mullo_epi32(coef_128[j * 32 + 13], src_128[i * 8 + 5]);
+			sum_24to27 = _mm_mullo_epi32(coef_128[j * 32 + 14], src_128[i * 8 + 6]);
+			sum_28to31 = _mm_mullo_epi32(coef_128[j * 32 + 15], src_128[i * 8 + 7]);
+
+			sum1 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum1 = _mm_add_epi32(sum1, sum_8to11);
+			sum1 = _mm_add_epi32(sum1, sum_12to15);
+			sum1 = _mm_add_epi32(sum1, sum_16to19);
+			sum1 = _mm_add_epi32(sum1, sum_20to23);
+			sum1 = _mm_add_epi32(sum1, sum_24to27);
+			sum1 = _mm_add_epi32(sum1, sum_28to31);
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 8));
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 4));
+
+			// 2
+			sum_0to3 = _mm_mullo_epi32(coef_128[j * 32 + 16], src_128[i * 8]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[j * 32 + 17], src_128[i * 8 + 1]);
+			sum_8to11 = _mm_mullo_epi32(coef_128[j * 32 + 18], src_128[i * 8 + 2]);
+			sum_12to15 = _mm_mullo_epi32(coef_128[j * 32 + 19], src_128[i * 8 + 3]);
+			sum_16to19 = _mm_mullo_epi32(coef_128[j * 32 + 20], src_128[i * 8 + 4]);
+			sum_20to23 = _mm_mullo_epi32(coef_128[j * 32 + 21], src_128[i * 8 + 5]);
+			sum_24to27 = _mm_mullo_epi32(coef_128[j * 32 + 22], src_128[i * 8 + 6]);
+			sum_28to31 = _mm_mullo_epi32(coef_128[j * 32 + 23], src_128[i * 8 + 7]);
+
+			sum2 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum2 = _mm_add_epi32(sum2, sum_8to11);
+			sum2 = _mm_add_epi32(sum2, sum_12to15);
+			sum2 = _mm_add_epi32(sum2, sum_16to19);
+			sum2 = _mm_add_epi32(sum2, sum_20to23);
+			sum2 = _mm_add_epi32(sum2, sum_24to27);
+			sum2 = _mm_add_epi32(sum2, sum_28to31);
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 8));
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 4));
+
+			// 3
+			sum_0to3 = _mm_mullo_epi32(coef_128[j * 32 + 24], src_128[i * 8]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[j * 32 + 25], src_128[i * 8 + 1]);
+			sum_8to11 = _mm_mullo_epi32(coef_128[j * 32 + 26], src_128[i * 8 + 2]);
+			sum_12to15 = _mm_mullo_epi32(coef_128[j * 32 + 27], src_128[i * 8 + 3]);
+			sum_16to19 = _mm_mullo_epi32(coef_128[j * 32 + 28], src_128[i * 8 + 4]);
+			sum_20to23 = _mm_mullo_epi32(coef_128[j * 32 + 29], src_128[i * 8 + 5]);
+			sum_24to27 = _mm_mullo_epi32(coef_128[j * 32 + 30], src_128[i * 8 + 6]);
+			sum_28to31 = _mm_mullo_epi32(coef_128[j * 32 + 31], src_128[i * 8 + 7]);
+
+			sum3 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum3 = _mm_add_epi32(sum3, sum_8to11);
+			sum3 = _mm_add_epi32(sum3, sum_12to15);
+			sum3 = _mm_add_epi32(sum3, sum_16to19);
+			sum3 = _mm_add_epi32(sum3, sum_20to23);
+			sum3 = _mm_add_epi32(sum3, sum_24to27);
+			sum3 = _mm_add_epi32(sum3, sum_28to31);
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 8));
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 4));
+
+			// Sum mul of result 0 1 2 3
+			sum0 = _mm_unpacklo_epi32(sum0, sum1);
+			sum2 = _mm_unpacklo_epi32(sum2, sum3);
+			allSum = _mm_unpacklo_epi64(sum0, sum2);
+			tmpDst = _mm_srai_epi32(_mm_add_epi32(allSum, factor), shift);
+
+			//clip
+			tmpDst = _mm_min_epi32(tmpDst, max_val);
+			tmpDst = _mm_max_epi32(tmpDst, min_val);
+
+			_mm_storeu_si128((__m128i*)&dst[i * 32 + j * 4], tmpDst);
+		}
+	}
+
+}
+
+template<int HEIGHT>
+inline void _fastForwardMM_B64_10bit_sse128(const int *src, int *dst, int shift, int line, int iSkipLine, int iSkipLine2, const short* tc)
+{
+	const int m128iNUM = HEIGHT * 64 / 4;
+	const int HEIGHT_4 = HEIGHT / 4;
+	__m128i src_128[m128iNUM], coef_128[1024];
+	__m128i allSum, tmpDst, sum_0to3, sum_4to7, sum_8to11, sum_12to15, sum_16to19, sum_20to23, sum_24to27, sum_28to31,
+		sum_32to35, sum_36to39, sum_40to43, sum_44to47, sum_48to51, sum_52to55, sum_56to59, sum_60to63, sum0, sum1, sum2, sum3;
+	__m128i factor;
+
+	// shift
+	factor = _mm_set1_epi32(1 << (shift - 1));
+
+	// Load source data and coefficient matrix as 32-bit unsigned int
+	for (int i = 0; i < m128iNUM; ++i) {
+		int p_s = i * 4;
+		src_128[i] = _mm_loadu_si128((__m128i*)(src + p_s));
+	}
+	for (int i = 0; i < 1024; ++i) {
+		int p_s = i * 4;
+		coef_128[i] = _mm_set_epi32(tc[p_s + 3], tc[p_s + 2], tc[p_s + 1], tc[p_s + 0]);
+	}
+
+	for (int i = 0; i < 64; i++) {
+		const int ix16 = i * 16;
+		for (int j = 0; j < HEIGHT_4; j++) {
+			const int jx64 = j * 64;
+			// Four results
+			// 0
+			sum_0to3 = _mm_mullo_epi32(src_128[jx64 + 0], coef_128[ix16 + 0]);
+			sum_4to7 = _mm_mullo_epi32(src_128[jx64 + 1], coef_128[ix16 + 1]);
+			sum_8to11 = _mm_mullo_epi32(src_128[jx64 + 2], coef_128[ix16 + 2]);
+			sum_12to15 = _mm_mullo_epi32(src_128[jx64 + 3], coef_128[ix16 + 3]);
+			sum_16to19 = _mm_mullo_epi32(src_128[jx64 + 4], coef_128[ix16 + 4]);
+			sum_20to23 = _mm_mullo_epi32(src_128[jx64 + 5], coef_128[ix16 + 5]);
+			sum_24to27 = _mm_mullo_epi32(src_128[jx64 + 6], coef_128[ix16 + 6]);
+			sum_28to31 = _mm_mullo_epi32(src_128[jx64 + 7], coef_128[ix16 + 7]);
+			sum_32to35 = _mm_mullo_epi32(src_128[jx64 + 8], coef_128[ix16 + 8]);
+			sum_36to39 = _mm_mullo_epi32(src_128[jx64 + 9], coef_128[ix16 + 9]);
+			sum_40to43 = _mm_mullo_epi32(src_128[jx64 + 10], coef_128[ix16 + 10]);
+			sum_44to47 = _mm_mullo_epi32(src_128[jx64 + 11], coef_128[ix16 + 11]);
+			sum_48to51 = _mm_mullo_epi32(src_128[jx64 + 12], coef_128[ix16 + 12]);
+			sum_52to55 = _mm_mullo_epi32(src_128[jx64 + 13], coef_128[ix16 + 13]);
+			sum_56to59 = _mm_mullo_epi32(src_128[jx64 + 14], coef_128[ix16 + 14]);
+			sum_60to63 = _mm_mullo_epi32(src_128[jx64 + 15], coef_128[ix16 + 15]);
+
+			sum0 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum0 = _mm_add_epi32(sum0, sum_8to11);
+			sum0 = _mm_add_epi32(sum0, sum_12to15);
+			sum0 = _mm_add_epi32(sum0, sum_16to19);
+			sum0 = _mm_add_epi32(sum0, sum_20to23);
+			sum0 = _mm_add_epi32(sum0, sum_24to27);
+			sum0 = _mm_add_epi32(sum0, sum_28to31);
+			sum0 = _mm_add_epi32(sum0, sum_32to35);
+			sum0 = _mm_add_epi32(sum0, sum_36to39);
+			sum0 = _mm_add_epi32(sum0, sum_40to43);
+			sum0 = _mm_add_epi32(sum0, sum_44to47);
+			sum0 = _mm_add_epi32(sum0, sum_48to51);
+			sum0 = _mm_add_epi32(sum0, sum_52to55);
+			sum0 = _mm_add_epi32(sum0, sum_56to59);
+			sum0 = _mm_add_epi32(sum0, sum_60to63);
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 8));
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 4));
+
+			// 1
+			sum_0to3 = _mm_mullo_epi32(src_128[jx64 + 16], coef_128[ix16 + 0]);
+			sum_4to7 = _mm_mullo_epi32(src_128[jx64 + 17], coef_128[ix16 + 1]);
+			sum_8to11 = _mm_mullo_epi32(src_128[jx64 + 18], coef_128[ix16 + 2]);
+			sum_12to15 = _mm_mullo_epi32(src_128[jx64 + 19], coef_128[ix16 + 3]);
+			sum_16to19 = _mm_mullo_epi32(src_128[jx64 + 20], coef_128[ix16 + 4]);
+			sum_20to23 = _mm_mullo_epi32(src_128[jx64 + 21], coef_128[ix16 + 5]);
+			sum_24to27 = _mm_mullo_epi32(src_128[jx64 + 22], coef_128[ix16 + 6]);
+			sum_28to31 = _mm_mullo_epi32(src_128[jx64 + 23], coef_128[ix16 + 7]);
+			sum_32to35 = _mm_mullo_epi32(src_128[jx64 + 24], coef_128[ix16 + 8]);
+			sum_36to39 = _mm_mullo_epi32(src_128[jx64 + 25], coef_128[ix16 + 9]);
+			sum_40to43 = _mm_mullo_epi32(src_128[jx64 + 26], coef_128[ix16 + 10]);
+			sum_44to47 = _mm_mullo_epi32(src_128[jx64 + 27], coef_128[ix16 + 11]);
+			sum_48to51 = _mm_mullo_epi32(src_128[jx64 + 28], coef_128[ix16 + 12]);
+			sum_52to55 = _mm_mullo_epi32(src_128[jx64 + 29], coef_128[ix16 + 13]);
+			sum_56to59 = _mm_mullo_epi32(src_128[jx64 + 30], coef_128[ix16 + 14]);
+			sum_60to63 = _mm_mullo_epi32(src_128[jx64 + 31], coef_128[ix16 + 15]);
+
+			sum1 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum1 = _mm_add_epi32(sum1, sum_8to11);
+			sum1 = _mm_add_epi32(sum1, sum_12to15);
+			sum1 = _mm_add_epi32(sum1, sum_16to19);
+			sum1 = _mm_add_epi32(sum1, sum_20to23);
+			sum1 = _mm_add_epi32(sum1, sum_24to27);
+			sum1 = _mm_add_epi32(sum1, sum_28to31);
+			sum1 = _mm_add_epi32(sum1, sum_32to35);
+			sum1 = _mm_add_epi32(sum1, sum_36to39);
+			sum1 = _mm_add_epi32(sum1, sum_40to43);
+			sum1 = _mm_add_epi32(sum1, sum_44to47);
+			sum1 = _mm_add_epi32(sum1, sum_48to51);
+			sum1 = _mm_add_epi32(sum1, sum_52to55);
+			sum1 = _mm_add_epi32(sum1, sum_56to59);
+			sum1 = _mm_add_epi32(sum1, sum_60to63);
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 8));
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 4));
+
+			// 2
+			sum_0to3 = _mm_mullo_epi32(src_128[jx64 + 32], coef_128[ix16 + 0]);
+			sum_4to7 = _mm_mullo_epi32(src_128[jx64 + 33], coef_128[ix16 + 1]);
+			sum_8to11 = _mm_mullo_epi32(src_128[jx64 + 34], coef_128[ix16 + 2]);
+			sum_12to15 = _mm_mullo_epi32(src_128[jx64 + 35], coef_128[ix16 + 3]);
+			sum_16to19 = _mm_mullo_epi32(src_128[jx64 + 36], coef_128[ix16 + 4]);
+			sum_20to23 = _mm_mullo_epi32(src_128[jx64 + 37], coef_128[ix16 + 5]);
+			sum_24to27 = _mm_mullo_epi32(src_128[jx64 + 38], coef_128[ix16 + 6]);
+			sum_28to31 = _mm_mullo_epi32(src_128[jx64 + 39], coef_128[ix16 + 7]);
+			sum_32to35 = _mm_mullo_epi32(src_128[jx64 + 40], coef_128[ix16 + 8]);
+			sum_36to39 = _mm_mullo_epi32(src_128[jx64 + 41], coef_128[ix16 + 9]);
+			sum_40to43 = _mm_mullo_epi32(src_128[jx64 + 42], coef_128[ix16 + 10]);
+			sum_44to47 = _mm_mullo_epi32(src_128[jx64 + 43], coef_128[ix16 + 11]);
+			sum_48to51 = _mm_mullo_epi32(src_128[jx64 + 44], coef_128[ix16 + 12]);
+			sum_52to55 = _mm_mullo_epi32(src_128[jx64 + 45], coef_128[ix16 + 13]);
+			sum_56to59 = _mm_mullo_epi32(src_128[jx64 + 46], coef_128[ix16 + 14]);
+			sum_60to63 = _mm_mullo_epi32(src_128[jx64 + 47], coef_128[ix16 + 15]);
+
+			sum2 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum2 = _mm_add_epi32(sum2, sum_8to11);
+			sum2 = _mm_add_epi32(sum2, sum_12to15);
+			sum2 = _mm_add_epi32(sum2, sum_16to19);
+			sum2 = _mm_add_epi32(sum2, sum_20to23);
+			sum2 = _mm_add_epi32(sum2, sum_24to27);
+			sum2 = _mm_add_epi32(sum2, sum_28to31);
+			sum2 = _mm_add_epi32(sum2, sum_32to35);
+			sum2 = _mm_add_epi32(sum2, sum_36to39);
+			sum2 = _mm_add_epi32(sum2, sum_40to43);
+			sum2 = _mm_add_epi32(sum2, sum_44to47);
+			sum2 = _mm_add_epi32(sum2, sum_48to51);
+			sum2 = _mm_add_epi32(sum2, sum_52to55);
+			sum2 = _mm_add_epi32(sum2, sum_56to59);
+			sum2 = _mm_add_epi32(sum2, sum_60to63);
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 8));
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 4));
+
+			// 3
+			sum_0to3 = _mm_mullo_epi32(src_128[jx64 + 48], coef_128[ix16 + 0]);
+			sum_4to7 = _mm_mullo_epi32(src_128[jx64 + 49], coef_128[ix16 + 1]);
+			sum_8to11 = _mm_mullo_epi32(src_128[jx64 + 50], coef_128[ix16 + 2]);
+			sum_12to15 = _mm_mullo_epi32(src_128[jx64 + 51], coef_128[ix16 + 3]);
+			sum_16to19 = _mm_mullo_epi32(src_128[jx64 + 52], coef_128[ix16 + 4]);
+			sum_20to23 = _mm_mullo_epi32(src_128[jx64 + 53], coef_128[ix16 + 5]);
+			sum_24to27 = _mm_mullo_epi32(src_128[jx64 + 54], coef_128[ix16 + 6]);
+			sum_28to31 = _mm_mullo_epi32(src_128[jx64 + 55], coef_128[ix16 + 7]);
+			sum_32to35 = _mm_mullo_epi32(src_128[jx64 + 56], coef_128[ix16 + 8]);
+			sum_36to39 = _mm_mullo_epi32(src_128[jx64 + 57], coef_128[ix16 + 9]);
+			sum_40to43 = _mm_mullo_epi32(src_128[jx64 + 58], coef_128[ix16 + 10]);
+			sum_44to47 = _mm_mullo_epi32(src_128[jx64 + 59], coef_128[ix16 + 11]);
+			sum_48to51 = _mm_mullo_epi32(src_128[jx64 + 60], coef_128[ix16 + 12]);
+			sum_52to55 = _mm_mullo_epi32(src_128[jx64 + 61], coef_128[ix16 + 13]);
+			sum_56to59 = _mm_mullo_epi32(src_128[jx64 + 62], coef_128[ix16 + 14]);
+			sum_60to63 = _mm_mullo_epi32(src_128[jx64 + 63], coef_128[ix16 + 15]);
+
+			sum3 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum3 = _mm_add_epi32(sum3, sum_8to11);
+			sum3 = _mm_add_epi32(sum3, sum_12to15);
+			sum3 = _mm_add_epi32(sum3, sum_16to19);
+			sum3 = _mm_add_epi32(sum3, sum_20to23);
+			sum3 = _mm_add_epi32(sum3, sum_24to27);
+			sum3 = _mm_add_epi32(sum3, sum_28to31);
+			sum3 = _mm_add_epi32(sum3, sum_32to35);
+			sum3 = _mm_add_epi32(sum3, sum_36to39);
+			sum3 = _mm_add_epi32(sum3, sum_40to43);
+			sum3 = _mm_add_epi32(sum3, sum_44to47);
+			sum3 = _mm_add_epi32(sum3, sum_48to51);
+			sum3 = _mm_add_epi32(sum3, sum_52to55);
+			sum3 = _mm_add_epi32(sum3, sum_56to59);
+			sum3 = _mm_add_epi32(sum3, sum_60to63);
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 8));
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 4));
+
+			// Sum mul of result 0 1 2 3
+			sum0 = _mm_unpacklo_epi32(sum0, sum1);
+			sum2 = _mm_unpacklo_epi32(sum2, sum3);
+			allSum = _mm_unpacklo_epi64(sum0, sum2);
+			tmpDst = _mm_srai_epi32(_mm_add_epi32(allSum, factor), shift);
+
+			_mm_storeu_si128((__m128i*)&dst[i * HEIGHT + j * 4], tmpDst);
+		}
+	}
+}
+
+template<int WIDTH>
+inline void _fastInverseMM_B64_10bit_sse128(const int *src, int *dst, int shift, int line, int iSkipLine, int iSkipLine2, const int outputMinimum, const int outputMaximum, const short* iT) {
+	const int m128iNUM = WIDTH * 64 / 4;
+	const int WIDTH_4 = WIDTH / 4;
+	__m128i src_128[m128iNUM], coef_128[1024];
+	__m128i allSum, tmpDst, sum_0to3, sum_4to7, sum_8to11, sum_12to15, sum_16to19, sum_20to23, sum_24to27, sum_28to31,
+		sum_32to35, sum_36to39, sum_40to43, sum_44to47, sum_48to51, sum_52to55, sum_56to59, sum_60to63, sum0, sum1, sum2, sum3;
+	__m128i factor, min_val, max_val;
+	__m128i tr[m128iNUM], tr_coef[1024];
+
+	// shift
+	factor = _mm_set1_epi32(1 << (shift - 1));
+	min_val = _mm_set1_epi32(outputMinimum);
+	max_val = _mm_set1_epi32(outputMaximum);
+
+	// Load source data and coefficient matrix as 32-bit unsigned int
+	for (int i = 0; i < m128iNUM; ++i) {
+		int p_s = i * 4;
+		src_128[i] = _mm_loadu_si128((__m128i*)(src + p_s));
+	}
+	for (int i = 0; i < 1024; ++i) {
+		int p_s = i * 4;
+		coef_128[i] = _mm_set_epi32(iT[p_s + 3], iT[p_s + 2], iT[p_s + 1], iT[p_s + 0]);
+	}
+
+	// Transpose coefficient matrix
+#define TRANSPOSE_Nx64_32BIT(I) \
+	for (int i = 0; i < m128iNUM / 64; ++i) { \
+		const int ix64 = i * 64;\
+		for (int j = 0; j < 64; j += 2) { \
+			tr[ix64 + j] = _mm_unpacklo_epi32(I[i + j * WIDTH_4], I[i + (j+1) * WIDTH_4]); \
+			tr[ix64 + j + 1] = _mm_unpackhi_epi32(I[i + j * WIDTH_4], I[i + (j+1) * WIDTH_4]); \
+		} \
+	} \
+	for (int i = 0; i < m128iNUM / 64; ++i) { \
+		const int ix64 = i * 64;\
+		for (int j = 0; j < 16; ++j) { \
+				I[ix64 + j] = _mm_unpacklo_epi64(tr[ix64 + j * 4], tr[ix64 + j * 4 + 2]); \
+				I[ix64 + j + 16] = _mm_unpackhi_epi64(tr[ix64 + j * 4], tr[ix64 + j * 4 + 2]); \
+		} \
+		for (int j = 0; j < 16; ++j) { \
+				I[ix64 + 32 + j] = _mm_unpacklo_epi64(tr[ix64 + j * 4 + 1], tr[ix64 + j * 4 + 3]); \
+				I[ix64 + 48 + j] = _mm_unpackhi_epi64(tr[ix64 + j * 4 + 1], tr[ix64 + j * 4 + 3]); \
+		} \
+	}\
+
+	TRANSPOSE_Nx64_32BIT(src_128);
+#undef TRANSPOSE_Nx64_32BIT
+
+	// Transpose coefficient matrix
+#define TRANSPOSE_64x64_32BIT(I) \
+	for (int i = 0; i < 16; ++i) { \
+		const int ix64 = i * 64;\
+		for (int j = 0; j < 64; j += 2) { \
+			tr_coef[ix64 + j] = _mm_unpacklo_epi32(I[i + j * 16], I[i + (j+1) * 16]); \
+			tr_coef[ix64 + j + 1] = _mm_unpackhi_epi32(I[i + j * 16], I[i + (j+1) * 16]); \
+		} \
+	} \
+	for (int i = 0; i < 16; ++i) { \
+		const int ix64 = i * 64;\
+		for (int j = 0; j < 16; ++j) { \
+				I[ix64 + j] = _mm_unpacklo_epi64(tr_coef[ix64 + j * 4], tr_coef[ix64 + j * 4 + 2]); \
+				I[ix64 + j + 16] = _mm_unpackhi_epi64(tr_coef[ix64 + j * 4], tr_coef[ix64 + j * 4 + 2]); \
+		} \
+		for (int j = 0; j < 16; ++j) { \
+				I[ix64 + 32 + j] = _mm_unpacklo_epi64(tr_coef[ix64 + j * 4 + 1], tr_coef[ix64 + j * 4 + 3]); \
+				I[ix64 + 48 + j] = _mm_unpackhi_epi64(tr_coef[ix64 + j * 4 + 1], tr_coef[ix64 + j * 4 + 3]); \
+		} \
+	}\
+
+	TRANSPOSE_64x64_32BIT(coef_128);
+#undef TRANSPOSE_64x64_32BIT
+
+	for (int i = 0; i < WIDTH; i++) {
+		const int ix16 = i * 16;
+		for (int j = 0; j < 16; j++) {
+			const int jx64 = j * 64;
+			// Four results
+			// 0
+			sum_0to3 = _mm_mullo_epi32(coef_128[jx64 + 0], src_128[ix16 + 0]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[jx64 + 1], src_128[ix16 + 1]);
+			sum_8to11 = _mm_mullo_epi32(coef_128[jx64 + 2], src_128[ix16 + 2]);
+			sum_12to15 = _mm_mullo_epi32(coef_128[jx64 + 3], src_128[ix16 + 3]);
+			sum_16to19 = _mm_mullo_epi32(coef_128[jx64 + 4], src_128[ix16 + 4]);
+			sum_20to23 = _mm_mullo_epi32(coef_128[jx64 + 5], src_128[ix16 + 5]);
+			sum_24to27 = _mm_mullo_epi32(coef_128[jx64 + 6], src_128[ix16 + 6]);
+			sum_28to31 = _mm_mullo_epi32(coef_128[jx64 + 7], src_128[ix16 + 7]);
+			sum_32to35 = _mm_mullo_epi32(coef_128[jx64 + 8], src_128[ix16 + 8]);
+			sum_36to39 = _mm_mullo_epi32(coef_128[jx64 + 9], src_128[ix16 + 9]);
+			sum_40to43 = _mm_mullo_epi32(coef_128[jx64 + 10], src_128[ix16 + 10]);
+			sum_44to47 = _mm_mullo_epi32(coef_128[jx64 + 11], src_128[ix16 + 11]);
+			sum_48to51 = _mm_mullo_epi32(coef_128[jx64 + 12], src_128[ix16 + 12]);
+			sum_52to55 = _mm_mullo_epi32(coef_128[jx64 + 13], src_128[ix16 + 13]);
+			sum_56to59 = _mm_mullo_epi32(coef_128[jx64 + 14], src_128[ix16 + 14]);
+			sum_60to63 = _mm_mullo_epi32(coef_128[jx64 + 15], src_128[ix16 + 15]);
+
+			sum0 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum0 = _mm_add_epi32(sum0, sum_8to11);
+			sum0 = _mm_add_epi32(sum0, sum_12to15);
+			sum0 = _mm_add_epi32(sum0, sum_16to19);
+			sum0 = _mm_add_epi32(sum0, sum_20to23);
+			sum0 = _mm_add_epi32(sum0, sum_24to27);
+			sum0 = _mm_add_epi32(sum0, sum_28to31);
+			sum0 = _mm_add_epi32(sum0, sum_32to35);
+			sum0 = _mm_add_epi32(sum0, sum_36to39);
+			sum0 = _mm_add_epi32(sum0, sum_40to43);
+			sum0 = _mm_add_epi32(sum0, sum_44to47);
+			sum0 = _mm_add_epi32(sum0, sum_48to51);
+			sum0 = _mm_add_epi32(sum0, sum_52to55);
+			sum0 = _mm_add_epi32(sum0, sum_56to59);
+			sum0 = _mm_add_epi32(sum0, sum_60to63);
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 8));
+			sum0 = _mm_add_epi32(sum0, _mm_srli_si128(sum0, 4));
+
+			// 1
+			sum_0to3 = _mm_mullo_epi32(coef_128[jx64 + 16], src_128[ix16 + 0]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[jx64 + 17], src_128[ix16 + 1]);
+			sum_8to11 = _mm_mullo_epi32(coef_128[jx64 + 18], src_128[ix16 + 2]);
+			sum_12to15 = _mm_mullo_epi32(coef_128[jx64 + 19], src_128[ix16 + 3]);
+			sum_16to19 = _mm_mullo_epi32(coef_128[jx64 + 20], src_128[ix16 + 4]);
+			sum_20to23 = _mm_mullo_epi32(coef_128[jx64 + 21], src_128[ix16 + 5]);
+			sum_24to27 = _mm_mullo_epi32(coef_128[jx64 + 22], src_128[ix16 + 6]);
+			sum_28to31 = _mm_mullo_epi32(coef_128[jx64 + 23], src_128[ix16 + 7]);
+			sum_32to35 = _mm_mullo_epi32(coef_128[jx64 + 24], src_128[ix16 + 8]);
+			sum_36to39 = _mm_mullo_epi32(coef_128[jx64 + 25], src_128[ix16 + 9]);
+			sum_40to43 = _mm_mullo_epi32(coef_128[jx64 + 26], src_128[ix16 + 10]);
+			sum_44to47 = _mm_mullo_epi32(coef_128[jx64 + 27], src_128[ix16 + 11]);
+			sum_48to51 = _mm_mullo_epi32(coef_128[jx64 + 28], src_128[ix16 + 12]);
+			sum_52to55 = _mm_mullo_epi32(coef_128[jx64 + 29], src_128[ix16 + 13]);
+			sum_56to59 = _mm_mullo_epi32(coef_128[jx64 + 30], src_128[ix16 + 14]);
+			sum_60to63 = _mm_mullo_epi32(coef_128[jx64 + 31], src_128[ix16 + 15]);
+
+			sum1 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum1 = _mm_add_epi32(sum1, sum_8to11);
+			sum1 = _mm_add_epi32(sum1, sum_12to15);
+			sum1 = _mm_add_epi32(sum1, sum_16to19);
+			sum1 = _mm_add_epi32(sum1, sum_20to23);
+			sum1 = _mm_add_epi32(sum1, sum_24to27);
+			sum1 = _mm_add_epi32(sum1, sum_28to31);
+			sum1 = _mm_add_epi32(sum1, sum_32to35);
+			sum1 = _mm_add_epi32(sum1, sum_36to39);
+			sum1 = _mm_add_epi32(sum1, sum_40to43);
+			sum1 = _mm_add_epi32(sum1, sum_44to47);
+			sum1 = _mm_add_epi32(sum1, sum_48to51);
+			sum1 = _mm_add_epi32(sum1, sum_52to55);
+			sum1 = _mm_add_epi32(sum1, sum_56to59);
+			sum1 = _mm_add_epi32(sum1, sum_60to63);
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 8));
+			sum1 = _mm_add_epi32(sum1, _mm_srli_si128(sum1, 4));
+
+			// 2
+			sum_0to3 = _mm_mullo_epi32(coef_128[jx64 + 32], src_128[ix16 + 0]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[jx64 + 33], src_128[ix16 + 1]);
+			sum_8to11 = _mm_mullo_epi32(coef_128[jx64 + 34], src_128[ix16 + 2]);
+			sum_12to15 = _mm_mullo_epi32(coef_128[jx64 + 35], src_128[ix16 + 3]);
+			sum_16to19 = _mm_mullo_epi32(coef_128[jx64 + 36], src_128[ix16 + 4]);
+			sum_20to23 = _mm_mullo_epi32(coef_128[jx64 + 37], src_128[ix16 + 5]);
+			sum_24to27 = _mm_mullo_epi32(coef_128[jx64 + 38], src_128[ix16 + 6]);
+			sum_28to31 = _mm_mullo_epi32(coef_128[jx64 + 39], src_128[ix16 + 7]);
+			sum_32to35 = _mm_mullo_epi32(coef_128[jx64 + 40], src_128[ix16 + 8]);
+			sum_36to39 = _mm_mullo_epi32(coef_128[jx64 + 41], src_128[ix16 + 9]);
+			sum_40to43 = _mm_mullo_epi32(coef_128[jx64 + 42], src_128[ix16 + 10]);
+			sum_44to47 = _mm_mullo_epi32(coef_128[jx64 + 43], src_128[ix16 + 11]);
+			sum_48to51 = _mm_mullo_epi32(coef_128[jx64 + 44], src_128[ix16 + 12]);
+			sum_52to55 = _mm_mullo_epi32(coef_128[jx64 + 45], src_128[ix16 + 13]);
+			sum_56to59 = _mm_mullo_epi32(coef_128[jx64 + 46], src_128[ix16 + 14]);
+			sum_60to63 = _mm_mullo_epi32(coef_128[jx64 + 47], src_128[ix16 + 15]);
+
+			sum2 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum2 = _mm_add_epi32(sum2, sum_8to11);
+			sum2 = _mm_add_epi32(sum2, sum_12to15);
+			sum2 = _mm_add_epi32(sum2, sum_16to19);
+			sum2 = _mm_add_epi32(sum2, sum_20to23);
+			sum2 = _mm_add_epi32(sum2, sum_24to27);
+			sum2 = _mm_add_epi32(sum2, sum_28to31);
+			sum2 = _mm_add_epi32(sum2, sum_32to35);
+			sum2 = _mm_add_epi32(sum2, sum_36to39);
+			sum2 = _mm_add_epi32(sum2, sum_40to43);
+			sum2 = _mm_add_epi32(sum2, sum_44to47);
+			sum2 = _mm_add_epi32(sum2, sum_48to51);
+			sum2 = _mm_add_epi32(sum2, sum_52to55);
+			sum2 = _mm_add_epi32(sum2, sum_56to59);
+			sum2 = _mm_add_epi32(sum2, sum_60to63);
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 8));
+			sum2 = _mm_add_epi32(sum2, _mm_srli_si128(sum2, 4));
+
+			// 3
+			sum_0to3 = _mm_mullo_epi32(coef_128[jx64 + 48], src_128[ix16 + 0]);
+			sum_4to7 = _mm_mullo_epi32(coef_128[jx64 + 49], src_128[ix16 + 1]);
+			sum_8to11 = _mm_mullo_epi32(coef_128[jx64 + 50], src_128[ix16 + 2]);
+			sum_12to15 = _mm_mullo_epi32(coef_128[jx64 + 51], src_128[ix16 + 3]);
+			sum_16to19 = _mm_mullo_epi32(coef_128[jx64 + 52], src_128[ix16 + 4]);
+			sum_20to23 = _mm_mullo_epi32(coef_128[jx64 + 53], src_128[ix16 + 5]);
+			sum_24to27 = _mm_mullo_epi32(coef_128[jx64 + 54], src_128[ix16 + 6]);
+			sum_28to31 = _mm_mullo_epi32(coef_128[jx64 + 55], src_128[ix16 + 7]);
+			sum_32to35 = _mm_mullo_epi32(coef_128[jx64 + 56], src_128[ix16 + 8]);
+			sum_36to39 = _mm_mullo_epi32(coef_128[jx64 + 57], src_128[ix16 + 9]);
+			sum_40to43 = _mm_mullo_epi32(coef_128[jx64 + 58], src_128[ix16 + 10]);
+			sum_44to47 = _mm_mullo_epi32(coef_128[jx64 + 59], src_128[ix16 + 11]);
+			sum_48to51 = _mm_mullo_epi32(coef_128[jx64 + 60], src_128[ix16 + 12]);
+			sum_52to55 = _mm_mullo_epi32(coef_128[jx64 + 61], src_128[ix16 + 13]);
+			sum_56to59 = _mm_mullo_epi32(coef_128[jx64 + 62], src_128[ix16 + 14]);
+			sum_60to63 = _mm_mullo_epi32(coef_128[jx64 + 63], src_128[ix16 + 15]);
+
+			sum3 = _mm_add_epi32(sum_0to3, sum_4to7);
+			sum3 = _mm_add_epi32(sum3, sum_8to11);
+			sum3 = _mm_add_epi32(sum3, sum_12to15);
+			sum3 = _mm_add_epi32(sum3, sum_16to19);
+			sum3 = _mm_add_epi32(sum3, sum_20to23);
+			sum3 = _mm_add_epi32(sum3, sum_24to27);
+			sum3 = _mm_add_epi32(sum3, sum_28to31);
+			sum3 = _mm_add_epi32(sum3, sum_32to35);
+			sum3 = _mm_add_epi32(sum3, sum_36to39);
+			sum3 = _mm_add_epi32(sum3, sum_40to43);
+			sum3 = _mm_add_epi32(sum3, sum_44to47);
+			sum3 = _mm_add_epi32(sum3, sum_48to51);
+			sum3 = _mm_add_epi32(sum3, sum_52to55);
+			sum3 = _mm_add_epi32(sum3, sum_56to59);
+			sum3 = _mm_add_epi32(sum3, sum_60to63);
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 8));
+			sum3 = _mm_add_epi32(sum3, _mm_srli_si128(sum3, 4));
+
+			// Sum mul of result 0 1 2 3
+			sum0 = _mm_unpacklo_epi32(sum0, sum1);
+			sum2 = _mm_unpacklo_epi32(sum2, sum3);
+			allSum = _mm_unpacklo_epi64(sum0, sum2);
+			tmpDst = _mm_srai_epi32(_mm_add_epi32(allSum, factor), shift);
+
+			//clip
+			tmpDst = _mm_min_epi32(tmpDst, max_val);
+			tmpDst = _mm_max_epi32(tmpDst, min_val);
+
+			_mm_storeu_si128((__m128i*)&dst[i * 64 + j * 4], tmpDst);
+		}
+	}
+
+}
+
+#endif	// #if x86_SSE_128
 
 
 /** 8x8 forward transform implemented using partial butterfly structure (1D)
@@ -1608,14 +3043,56 @@ void fastForwardKLT_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int 
 {
   Int bIntra = iTransType >> 1;
   Int bHighPrec = iTransType & 1;
+#if x86_SSE_128
+/*
+	if (4 == line) {
+		_fastForwardMM_B4_10bit_sse128(src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT4HP[0] : g_aiKLT4[0]);
+#if DEBUG_GSXU
+		// debug by gsxu
+		TCoeff *dst_anchor = (TCoeff*)alloca(line * line * sizeof(TCoeff));
+		_fastForwardMM< 4 >(src, dst_anchor, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT4HP[0] : g_aiKLT4[0]);
+		for (int i = 0; i < line; ++i) {
+			for (int j = 0; j < line; ++j) {
+				std::cout << (dst[i * line + j] - dst_anchor[i * line + j]) << " ";
+			}
+			std::cout << std::endl;
+	}
+#endif
+	}
+	else 
+		_fastForwardMM< 4 >(src, dst, shift, line, iSkipLine, iSkipLine2, use, use ? g_aiKLT4HP[0] : g_aiKLT4[0]);
+*/
+	switch (line) {
+	case 4: _fastForwardMM_B4_10bit_sse128<4>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]); break;
+	case 8: _fastForwardMM_B4_10bit_sse128<8>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]); break;
+	case 16: _fastForwardMM_B4_10bit_sse128<16>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]); break;
+	case 32: _fastForwardMM_B4_10bit_sse128<32>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]); break;
+	case 64: _fastForwardMM_B4_10bit_sse128<64>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]); break;
+	case 128: _fastForwardMM_B4_10bit_sse128<128>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]); break;
+	default: _fastForwardMM< 4 >(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]);
+	}
+#else
   _fastForwardMM< 4 >( src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0] );
+#endif
 }
 
 void fastInverseKLT_B4(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum)
 {
   Int bIntra = iTransType >> 1;
   Int bHighPrec = iTransType & 1;
+#if x86_SSE_128
+	switch (line) {
+	case 4: _fastInverseMM_B4_10bit_sse128<4>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]); break;
+	case 8: _fastInverseMM_B4_10bit_sse128<8>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]); break;
+	case 16: _fastInverseMM_B4_10bit_sse128<16>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]); break;
+	case 32: _fastInverseMM_B4_10bit_sse128<32>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]); break;
+	case 64: _fastInverseMM_B4_10bit_sse128<64>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]); break;
+	case 128: _fastInverseMM_B4_10bit_sse128<128>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]); break;
+	default: _fastInverseMM< 4 >(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0]);
+}
+#else
   _fastInverseMM< 4 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT4HP[bIntra][0] : g_aiKLT4[bIntra][0] );
+#endif
 }
 
 // 8x8
@@ -1623,14 +3100,38 @@ void fastForwardKLT_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int 
 {
   Int bIntra = iTransType >> 1;
   Int bHighPrec = iTransType & 1;
+#if x86_SSE_128
+	switch (line) {
+	case 4: _fastForwardMM_B8_10bit_sse128<4>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]); break;
+	case 8: _fastForwardMM_B8_10bit_sse128<8>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]); break;
+	case 16: _fastForwardMM_B8_10bit_sse128<16>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]); break;
+	case 32: _fastForwardMM_B8_10bit_sse128<32>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]); break;
+	case 64: _fastForwardMM_B8_10bit_sse128<64>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]); break;
+	case 128: _fastForwardMM_B8_10bit_sse128<128>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]); break;
+	default: _fastForwardMM< 8 >(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]);
+	}
+#else
   _fastForwardMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0] );
+#endif
 }
 
 void fastInverseKLT_B8(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum)
 {
   Int bIntra = iTransType >> 1;
   Int bHighPrec = iTransType & 1;
+#if x86_SSE_128
+	switch (line) {
+	case 4: _fastInverseMM_B8_10bit_sse128<4>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]); break;
+	case 8: _fastInverseMM_B8_10bit_sse128<8>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]); break;
+	case 16: _fastInverseMM_B8_10bit_sse128<16>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]); break;
+	case 32: _fastInverseMM_B8_10bit_sse128<32>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]); break;
+	case 64: _fastInverseMM_B8_10bit_sse128<64>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]); break;
+	case 128: _fastInverseMM_B8_10bit_sse128<128>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]); break;
+	default: _fastInverseMM< 8 >(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0]);
+	}
+#else
   _fastInverseMM< 8 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT8HP[bIntra][0] : g_aiKLT8[bIntra][0] );
+#endif
 }
 
 // 16x16
@@ -1638,14 +3139,38 @@ void fastForwardKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
 {
   Int bIntra = iTransType >> 1;
   Int bHighPrec = iTransType & 1;
+#if x86_SSE_128
+	switch (line) {
+	case 4: _fastForwardMM_B16_10bit_sse128<4>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]); break;
+	case 8: _fastForwardMM_B16_10bit_sse128<8>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]); break;
+	case 16: _fastForwardMM_B16_10bit_sse128<16>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]); break;
+	case 32: _fastForwardMM_B16_10bit_sse128<32>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]); break;
+	case 64: _fastForwardMM_B16_10bit_sse128<64>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]); break;
+	case 128: _fastForwardMM_B16_10bit_sse128<128>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]); break;
+	default: _fastForwardMM< 16 >(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]);
+	}
+#else
   _fastForwardMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0] );
+#endif
 }
 
 void fastInverseKLT_B16(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum)
 {
   Int bIntra = iTransType >> 1;
   Int bHighPrec = iTransType & 1;
+#if x86_SSE_128
+	switch (line) {
+	case 4: _fastInverseMM_B16_10bit_sse128<4>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]); break;
+	case 8: _fastInverseMM_B16_10bit_sse128<8>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]); break;
+	case 16: _fastInverseMM_B16_10bit_sse128<16>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]); break;
+	case 32: _fastInverseMM_B16_10bit_sse128<32>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]); break;
+	case 64: _fastInverseMM_B16_10bit_sse128<64>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]); break;
+	case 128: _fastInverseMM_B16_10bit_sse128<128>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]); break;
+	default: _fastInverseMM< 16 >(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0]);
+	}
+#else
   _fastInverseMM< 16 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT16HP[bIntra][0] : g_aiKLT16[bIntra][0] );
+#endif
 }
 
 // 32x32
@@ -1653,14 +3178,38 @@ void fastForwardKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
 {
   Int bIntra = iTransType >> 1;
   Int bHighPrec = iTransType & 1;
+#if x86_SSE_128
+	switch (line) {
+	case 8: _fastForwardMM_B32_10bit_sse128<8>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0]); break;
+	case 16: _fastForwardMM_B32_10bit_sse128<16>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0]); break;
+	case 32: _fastForwardMM_B32_10bit_sse128<32>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0]); break;
+	case 64: _fastForwardMM_B32_10bit_sse128<64>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0]); break;
+	case 128: _fastForwardMM_B32_10bit_sse128<128>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0]); break;
+	// SSE can't speedup case 4x32
+	default: _fastForwardMM< 32 >(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0]);
+	}
+#else
   _fastForwardMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0] );
+#endif
 }
 
 void fastInverseKLT_B32(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum)
 {
   Int bIntra = iTransType >> 1;
   Int bHighPrec = iTransType & 1;
+#if x86_SSE_128
+	switch (line) {
+	case 4: _fastInverseMM_B32_10bit_sse128<4>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0]); break;
+	case 8: _fastInverseMM_B32_10bit_sse128<8>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0]); break;
+	case 16: _fastInverseMM_B32_10bit_sse128<16>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0]); break;
+	case 32: _fastInverseMM_B32_10bit_sse128<32>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0]); break;
+	case 64: _fastInverseMM_B32_10bit_sse128<64>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0]); break;
+	case 128: _fastInverseMM_B32_10bit_sse128<128>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0]); break;
+	default: _fastInverseMM< 32 >(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0]);
+	}
+#else
   _fastInverseMM< 32 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT32HP[bIntra][0] : g_aiKLT32[bIntra][0] );
+#endif
 }
 
 
@@ -1668,14 +3217,37 @@ void fastForwardKLT_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int
 {
   Int bIntra = iTransType >> 1;
   Int bHighPrec = iTransType & 1;
+#if x86_SSE_128
+	switch (line) {
+	case 8: _fastForwardMM_B64_10bit_sse128<8>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0]); break;
+	case 32: _fastForwardMM_B64_10bit_sse128<32>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0]); break;
+	case 64: _fastForwardMM_B64_10bit_sse128<64>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0]); break;
+	case 128: _fastForwardMM_B64_10bit_sse128<128>(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0]); break;
+	// SSE2 can't speedup 64x16 case and 64x4 case
+	default: _fastForwardMM< 64 >(src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0]);
+	}
+#else
   _fastForwardMM< 64 >( src, dst, shift, line, iSkipLine, iSkipLine2, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0] );
+#endif
 }
 
 void fastInverseKLT_B64(const TCoeff *src, TCoeff *dst, Int shift, Int line, Int iSkipLine, Int iSkipLine2, Int iTransType, const TCoeff outputMinimum, const TCoeff outputMaximum)
 {
   Int bIntra = iTransType >> 1;
   Int bHighPrec = iTransType & 1;
+#if x86_SSE_128
+	switch (line) {
+	case 4: _fastInverseMM_B64_10bit_sse128<4>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0]); break;
+	case 8: _fastInverseMM_B64_10bit_sse128<8>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0]); break;
+	case 16: _fastInverseMM_B64_10bit_sse128<16>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0]); break;
+	case 32: _fastInverseMM_B64_10bit_sse128<32>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0]); break;
+	case 64: _fastInverseMM_B64_10bit_sse128<64>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0]); break;
+	case 128: _fastInverseMM_B64_10bit_sse128<128>(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0]); break;
+	default: _fastInverseMM< 64 >(src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0]);
+	}
+#else
   _fastInverseMM< 64 >( src, dst, shift, line, iSkipLine, iSkipLine2, outputMinimum, outputMaximum, bHighPrec ? g_aiKLT64HP[bIntra][0] : g_aiKLT64[bIntra][0] );
+#endif
 }
 
 #endif
