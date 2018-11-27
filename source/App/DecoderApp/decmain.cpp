@@ -119,11 +119,17 @@ int main(int argc, char* argv[])
 
 
 #if STAT_KLT_IDX
-  extern int kltIdxHist[4];
-  printf("\nKLT Index Statistics (tu number):\n");
+  extern int intraKltIdxHist[4];
+  extern int interKltIdxHist[4];
+  printf("\nIntra KLT Index Statistics (tu number):\n");
   for (int i = 0; i < 4; i++)
   {
-    printf("  klt Idx %d : %d\n", i, kltIdxHist[i]);
+    printf("  klt Idx %d : %d\n", i, intraKltIdxHist[i]);
+  }
+  printf("\nInter KLT Index Statistics (tu number):\n");
+  for (int i = 0; i < 4; i++)
+  {
+    printf("  klt Idx %d : %d\n", i, interKltIdxHist[i]);
   }
 #endif
 

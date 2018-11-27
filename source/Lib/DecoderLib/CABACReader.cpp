@@ -63,7 +63,8 @@
 #endif
 
 #if STAT_KLT_IDX
-int kltIdxHist[4];
+int intraKltIdxHist[4];
+int interKltIdxHist[4];
 #endif
 
 void CABACReader::initCtxModels( Slice& slice )
@@ -2354,6 +2355,9 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
         (*tu.cu).kltFlag = 0;
       }
     }
+#if STAT_KLT_IDX
+    intraKltIdxHist[tu.kltIdx]++;
+#endif
     DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() intra etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int )tu.kltIdx + (*tu.cu).kltFlag);
   }
   if( !CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeKltInter ) && ( tu.cu->Y().height <= maxSizeKltInter ) )
@@ -2363,12 +2367,11 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
 
     tu.kltIdx = ( uiSymbol2 << 1 ) | ( int ) uiSymbol1;
     (*tu.cu).kltFlag = 1;
+#if STAT_KLT_IDX
+    interKltIdxHist[tu.kltIdx]++;
+#endif
     DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() inter etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int ) trIdx );
   }
   CHECK(tu.kltIdx < 0 || tu.kltIdx > 3, "Incorrect transform index");
-
-#if STAT_KLT_IDX
-  kltIdxHist[trIdx]++;
-#endif
 }
 #endif
