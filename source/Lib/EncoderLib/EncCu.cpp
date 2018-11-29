@@ -1547,7 +1547,7 @@ void EncCu::xEncodeInterResidual( CodingStructure *&tempCS, CodingStructure *&be
   const SPS &sps = *tempCS->sps;
   const SizeType width = partitioner.currArea().lwidth();
   const SizeType height = partitioner.currArea().lheight();
-  if (sps.getSpsNext().getUseInterKLT() && width <= KLT_INTRA_MAX_CU_WITH_QTBT && height <= KLT_INTRA_MAX_CU_WITH_QTBT)
+  if (sps.getSpsNext().getUseInterKLT() && width <= KLT_INTER_MAX_CU_WITH_QTBT && height <= KLT_INTER_MAX_CU_WITH_QTBT)
   {
     cu->kltFlag = 1;
   }

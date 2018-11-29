@@ -2356,7 +2356,7 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
       }
     }
 #if STAT_KLT_IDX
-    intraKltIdxHist[tu.kltIdx]++;
+    intraKltIdxHist[tu.kltIdx + (*tu.cu).kltFlag]++;
 #endif
     DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() intra etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.lx(), tu.ly(), ( int )tu.kltIdx + (*tu.cu).kltFlag);
   }
