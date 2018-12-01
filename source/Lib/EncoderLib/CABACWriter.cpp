@@ -2370,8 +2370,23 @@ Void CABACWriter::klt_tu_index( const TransformUnit& tu )
   if( !CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeKltInter ) && ( tu.cu->Y().height <= maxSizeKltInter ) )
   {
     UChar trIdx = tu.kltIdx;
-    m_BinEncoder.encodeBin( ( trIdx & 1 ) ? 1 : 0, Ctx::KLTTuIndex( 3 ) );
-    m_BinEncoder.encodeBin( ( trIdx / 2 ) ? 1 : 0, Ctx::KLTTuIndex( 4 ) );
+    UChar ctxIdx = 3;
+    if (trIdx == 0)
+    {
+      m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(ctxIdx));
+    }
+    else
+    {
+      while (trIdx--)
+      {
+        m_BinEncoder.encodeBin(0, Ctx::KLTTuIndex(ctxIdx));
+        ctxIdx++;
+      }
+      if(tu.kltIdx != 3)
+      {
+        m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(ctxIdx));
+      }
+    }
     DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() inter etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.blocks[COMPONENT_Y].x, tu.blocks[COMPONENT_Y].y, ( int ) tu.kltIdx );
   }
 }

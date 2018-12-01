@@ -2362,10 +2362,32 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
   }
   if( !CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeKltInter ) && ( tu.cu->Y().height <= maxSizeKltInter ) )
   {
-    bool uiSymbol1 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 3 ) );
-    bool uiSymbol2 = m_BinDecoder.decodeBin( Ctx::KLTTuIndex( 4 ) );
+    UChar ctxIdx = 3;
 
-    tu.kltIdx = ( uiSymbol2 << 1 ) | ( int ) uiSymbol1;
+
+
+
+    bool uiSymbol1 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(ctxIdx));
+    if (uiSymbol1)
+    {
+      trIdx = 0;
+    }
+    else
+    {
+      while (!uiSymbol1 && trIdx < 2)
+      {
+        trIdx++;
+        ctxIdx++;
+        uiSymbol1 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(ctxIdx));
+      }
+      if (uiSymbol1 == 0)
+      {
+        trIdx++;
+        assert(trIdx == 3);
+      }
+    }
+
+    tu.kltIdx = trIdx;
     (*tu.cu).kltFlag = 1;
 #if STAT_KLT_IDX
     interKltIdxHist[tu.kltIdx]++;

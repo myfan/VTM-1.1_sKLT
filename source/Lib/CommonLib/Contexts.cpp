@@ -610,9 +610,9 @@ const CtxSet ContextSetCfg::KLTCuFlag = ContextSetCfg::addCtxSet
 
 const CtxSet ContextSetCfg::KLTTuIndex = ContextSetCfg::addCtxSet
 ({
-  {  CNU, CNU, CNU, CNU, CNU,},
-  {  CNU, CNU, CNU, CNU, CNU,},
-  {  CNU, CNU, CNU, CNU, CNU,},
+  {  CNU, CNU, CNU, CNU, CNU, CNU,},
+  {  CNU, CNU, CNU, CNU, CNU, CNU,},
+  {  CNU, CNU, CNU, CNU, CNU, CNU,},
 });
 #endif
 
