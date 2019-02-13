@@ -2346,7 +2346,7 @@ Void CABACWriter::klt_tu_index( const TransformUnit& tu )
     else
     {
       UChar trIdx = tu.kltIdx + (UChar)((*tu.cu).kltFlag); //! 0: kltFlag = 0, 1~3: kltFlag = 1, klt index
-      if (trIdx == 1)
+      if (trIdx == 1) // tu.kltIdx = 0, KLT+KLT
       {
         CHECK(!((*tu.cu).kltFlag), "Error Klt Signal");
         m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(0));
@@ -2371,20 +2371,21 @@ Void CABACWriter::klt_tu_index( const TransformUnit& tu )
   {
     UChar trIdx = tu.kltIdx;
     UChar ctxIdx = 3;
-    if (trIdx == 0)
+    if (trIdx == 3)
     {
-      m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(ctxIdx));
+      m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(3));
     }
     else
     {
-      while (trIdx--)
+      m_BinEncoder.encodeBin(0, Ctx::KLTTuIndex(3));
+      if(trIdx == 2)
       {
-        m_BinEncoder.encodeBin(0, Ctx::KLTTuIndex(ctxIdx));
-        ctxIdx++;
+        m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(4));
       }
-      if(tu.kltIdx != 3)
+      else
       {
-        m_BinEncoder.encodeBin(1, Ctx::KLTTuIndex(ctxIdx));
+        m_BinEncoder.encodeBin(0, Ctx::KLTTuIndex(4));
+        m_BinEncoder.encodeBin(trIdx == 0, Ctx::KLTTuIndex(5));
       }
     }
     DTRACE( g_trace_ctx, D_SYNTAX, "klt_tu_index() inter etype=%d pos=(%d,%d) kltTrIdx=%d\n", COMPONENT_Y, tu.blocks[COMPONENT_Y].x, tu.blocks[COMPONENT_Y].y, ( int ) tu.kltIdx );

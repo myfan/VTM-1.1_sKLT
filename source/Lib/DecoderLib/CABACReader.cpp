@@ -2362,28 +2362,22 @@ Void CABACReader::klt_tu_index( TransformUnit& tu )
   }
   if( !CU::isIntra( *tu.cu ) && ( tu.cu->Y().width <= maxSizeKltInter ) && ( tu.cu->Y().height <= maxSizeKltInter ) )
   {
-    UChar ctxIdx = 3;
-
-
-
-
-    bool uiSymbol1 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(ctxIdx));
+    bool uiSymbol1 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(3));
     if (uiSymbol1)
     {
-      trIdx = 0;
+      trIdx = 3;
     }
     else
     {
-      while (!uiSymbol1 && trIdx < 2)
+      uiSymbol1 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(4));
+      if (uiSymbol1)
       {
-        trIdx++;
-        ctxIdx++;
-        uiSymbol1 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(ctxIdx));
+        trIdx = 2;
       }
-      if (uiSymbol1 == 0)
+      else
       {
-        trIdx++;
-        assert(trIdx == 3);
+        uiSymbol1 = m_BinDecoder.decodeBin(Ctx::KLTTuIndex(5));
+        trIdx = uiSymbol1 ? 0 : 1;
       }
     }
 
